@@ -1,0 +1,32 @@
+﻿API comparison: 64 connections, 8s per sample, 2s warmup, 3 rounds, 4 workers
+
+scenario: list
+  blazingly  median     12,720 rps   best     19,641 rps   p50 3.233ms    p99 18.910ms   cpu  291%  peak RSS   27.7 MiB  n=3
+  axum       median     15,578 rps   best     21,955 rps   p50 2.953ms    p99 9.681ms    cpu  292%  peak RSS   26.4 MiB  n=3
+  actix      median     16,121 rps   best     18,764 rps   p50 2.648ms    p99 12.378ms   cpu  315%  peak RSS   28.6 MiB  n=3
+  fastapi    median      2,126 rps   best      3,361 rps   p50 21.915ms   p99 65.402ms   cpu  374%  peak RSS  304.1 MiB  n=3
+
+scenario: detail
+  blazingly  median     24,953 rps   best     30,977 rps   p50 1.774ms    p99 7.618ms    cpu  314%  peak RSS   26.0 MiB  n=3
+  axum       median     25,124 rps   best     28,246 rps   p50 1.835ms    p99 5.846ms    cpu  301%  peak RSS   26.4 MiB  n=3
+  actix      median     25,200 rps   best     26,620 rps   p50 1.732ms    p99 6.393ms    cpu  287%  peak RSS   26.9 MiB  n=3
+  fastapi    median      3,219 rps   best      3,517 rps   p50 14.977ms   p99 47.273ms   cpu  372%  peak RSS  305.5 MiB  n=3
+
+scenario: filter
+  blazingly  median     13,161 rps   best     14,124 rps   p50 3.588ms    p99 12.888ms   cpu  353%  peak RSS   27.6 MiB  n=3
+  axum       median     17,311 rps   best     18,743 rps   p50 2.676ms    p99 8.302ms    cpu  324%  peak RSS   27.1 MiB  n=3
+  actix      median     20,567 rps   best     22,191 rps   p50 2.305ms    p99 5.582ms    cpu  361%  peak RSS   28.5 MiB  n=3
+  fastapi    median      2,600 rps   best      2,980 rps   p50 19.150ms   p99 48.561ms   cpu  394%  peak RSS  305.3 MiB  n=3
+
+scenario: search
+  blazingly  median        597 rps   best        660 rps   p50 87.381ms   p99 142.957ms  cpu  382%  peak RSS   24.9 MiB  n=3
+  axum       median     19,589 rps   best     21,547 rps   p50 2.422ms    p99 6.203ms    cpu  333%  peak RSS   25.7 MiB  n=3
+  actix      median        536 rps   best        597 rps   p50 93.046ms   p99 163.406ms  cpu  366%  peak RSS   26.6 MiB  n=3
+  fastapi    median      2,968 rps   best      2,968 rps   p50 16.779ms   p99 41.301ms   cpu  408%  peak RSS  303.9 MiB  n=2
+
+scenario: bulk
+  blazingly  median      1,513 rps   best      1,798 rps   p50 34.382ms   p99 46.683ms   cpu  140%  peak RSS   26.1 MiB  n=3
+  axum       median      8,053 rps   best      8,458 rps   p50 6.037ms    p99 14.729ms   cpu  355%  peak RSS   27.9 MiB  n=3
+  actix      median      6,213 rps   best      7,309 rps   p50 8.020ms    p99 12.685ms   cpu  224%  peak RSS   29.3 MiB  n=3
+  fastapi    median      1,490 rps   best      1,667 rps   p50 32.429ms   p99 75.754ms   cpu  382%  peak RSS  311.8 MiB  n=3
+

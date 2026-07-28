@@ -1,0 +1,5 @@
+﻿/rust/target
+/results/*.tmp
+__pycache__/
+.venv/
+*.pyc

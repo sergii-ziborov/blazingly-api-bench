@@ -1,0 +1,25 @@
+[package]
+name = "blazingly-api"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+blazingly = { path = "../../../blazingly/crates/blazingly", features = ["native"] }
+# The framework is runtime-neutral and ships no timer, so the one-second SSE
+# tick needs the same Compio version the native adapter drives.
+compio = { version = "0.17.0", default-features = false, features = [
+    "io-compat",
+    "io-uring",
+    "dispatcher",
+    "polling",
+    "runtime",
+    "signal",
+    "time",
+] }
+serde.workspace = true
+serde_json.workspace = true
+# `blazingly::validation::DateTime` wraps `time::OffsetDateTime`; comparing and
+# re-encoding one as RFC 3339 needs the crate it wraps.
+time = { version = "0.3", features = ["formatting", "parsing"] }
