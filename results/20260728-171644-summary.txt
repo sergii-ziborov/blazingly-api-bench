@@ -1,0 +1,49 @@
+﻿API comparison: 64 connections, 8s per sample, 2s warmup, 4 rounds, 4 workers
+
+host background CPU before: avg 80.7%  min 71.5%  max 85.6%
+host background CPU after:  avg 67.3%  min 53.7%  max 75.7%
+
+scenario: list
+  blazingly  median     16,239 rps   range      6,112 - 17,238     spread 2.82x  p50 2.000ms    p99 23.870ms   cpu  246%  peak RSS   26.3 MiB  host 66-80%  n=4
+  axum       median     11,937 rps   range      7,628 - 14,910     spread 1.95x  p50 3.843ms    p99 12.369ms   cpu  239%  peak RSS   25.1 MiB  host 64-83%  n=4
+  actix      median     14,397 rps   range      9,361 - 15,503     spread 1.66x  p50 2.801ms    p99 13.760ms   cpu  283%  peak RSS   27.1 MiB  host 58-85%  n=4
+  tokio      median     14,526 rps   range      8,665 - 22,579     spread 2.61x  p50 3.152ms    p99 9.893ms    cpu  254%  peak RSS   24.5 MiB  host 55-82%  n=4
+  fastapi    median      2,792 rps   range        996 - 2,792      spread 2.80x  p50 17.127ms   p99 47.603ms   cpu  391%  peak RSS  296.4 MiB  host 45-82%  n=2
+
+scenario: detail
+  blazingly  median     26,909 rps   range     16,142 - 28,249     spread 1.75x  p50 1.206ms    p99 12.289ms   cpu  254%  peak RSS   25.6 MiB  host 83-86%  n=4
+  axum       median     24,759 rps   range      8,255 - 26,254     spread 3.18x  p50 1.906ms    p99 5.186ms    cpu  295%  peak RSS   24.8 MiB  host 53-86%  n=4
+  actix      median     28,585 rps   range     11,155 - 29,512     spread 2.65x  p50 1.523ms    p99 5.208ms    cpu  323%  peak RSS   25.4 MiB  host 37-85%  n=4
+  tokio      median     23,391 rps   range      7,952 - 31,730     spread 3.99x  p50 1.869ms    p99 6.918ms    cpu  268%  peak RSS   24.5 MiB  host 56-86%  n=4
+  fastapi    median      3,144 rps   range        787 - 3,160      spread 4.01x  p50 14.900ms   p99 50.040ms   cpu  355%  peak RSS  296.9 MiB  host 37-86%  n=3
+
+scenario: filter
+  blazingly  median     14,244 rps   range      9,872 - 21,547     spread 2.18x  p50 2.752ms    p99 19.536ms   cpu  249%  peak RSS   26.1 MiB  host 64-85%  n=4
+  axum       median     12,872 rps   range      5,351 - 17,594     spread 3.29x  p50 3.464ms    p99 12.269ms   cpu  254%  peak RSS   25.1 MiB  host 35-86%  n=4
+  actix      median     14,013 rps   range     11,908 - 15,664     spread 1.32x  p50 2.778ms    p99 15.700ms   cpu  263%  peak RSS   26.7 MiB  host 41-85%  n=4
+  tokio      median     14,212 rps   range     11,619 - 15,119     spread 1.30x  p50 3.003ms    p99 13.573ms   cpu  267%  peak RSS   24.5 MiB  host 40-85%  n=4
+  fastapi    median      1,922 rps   range      1,547 - 2,023      spread 1.31x  p50 23.604ms   p99 80.115ms   cpu  338%  peak RSS  296.3 MiB  host 51-68%  n=3
+
+scenario: search
+  blazingly  median     16,628 rps   range      8,249 - 21,146     spread 2.56x  p50 2.207ms    p99 15.948ms   cpu  273%  peak RSS   25.2 MiB  host 43-84%  n=4
+  axum       median     14,410 rps   range      9,206 - 16,222     spread 1.76x  p50 3.022ms    p99 12.040ms   cpu  268%  peak RSS   24.5 MiB  host 50-84%  n=4
+  actix      median     14,285 rps   range     12,420 - 15,886     spread 1.28x  p50 2.491ms    p99 21.978ms   cpu  231%  peak RSS   24.5 MiB  host 58-79%  n=4
+  tokio      median     17,902 rps   range     10,103 - 18,057     spread 1.79x  p50 2.558ms    p99 8.024ms    cpu  293%  peak RSS   24.5 MiB  host 45-86%  n=4
+  fastapi    median      2,243 rps   range      2,088 - 2,243      spread 1.07x  p50 22.114ms   p99 58.497ms   cpu  360%  peak RSS  296.0 MiB  host 60-70%  n=2
+
+scenario: bulk
+  blazingly  median        978 rps   range        273 - 1,142      spread 4.18x  p50 48.085ms   p99 132.191ms  cpu  117%  peak RSS   28.2 MiB  host 39-86%  n=4
+  axum       median      5,755 rps   range      3,299 - 7,140      spread 2.16x  p50 8.074ms    p99 26.621ms   cpu  258%  peak RSS   26.9 MiB  host 62-86%  n=4
+  actix      median      4,742 rps   range      3,914 - 4,956      spread 1.27x  p50 8.858ms    p99 39.006ms   cpu  153%  peak RSS   27.8 MiB  host 54-85%  n=4
+  tokio      median      8,845 rps   range      6,534 - 9,138      spread 1.40x  p50 5.428ms    p99 13.520ms   cpu  283%  peak RSS   25.8 MiB  host 63-85%  n=4
+  fastapi    median        975 rps   range        636 - 1,252      spread 1.97x  p50 46.817ms   p99 133.823ms  cpu  258%  peak RSS  306.3 MiB  host 76-80%  n=3
+
+discarded samples (excluded from every median above):
+  fastapi    list    round 2  connection errors  errors=13 mismatches=0
+  fastapi    bulk    round 2  connection errors  errors=16 mismatches=0
+  fastapi    list    round 3  connection errors  errors=17 mismatches=0
+  fastapi    search  round 3  connection errors  errors=11 mismatches=0
+  fastapi    detail  round 4  connection errors  errors=14 mismatches=0
+  fastapi    filter  round 4  connection errors  errors=17 mismatches=0
+  fastapi    search  round 4  connection errors  errors=20 mismatches=0
+

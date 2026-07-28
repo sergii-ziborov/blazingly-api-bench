@@ -1,4 +1,4 @@
-﻿//! The Blazingly implementation of the apibench contract.
+//! The Blazingly implementation of the apibench contract.
 //!
 //! One plugin holds the shared corpus and the two security schemes; the
 //! multicore native server builds one compiled application per worker.
@@ -23,8 +23,6 @@ const PORT: u16 = 3201;
 /// Comfortably above the contract's 10 MiB cover limit so the handler, not the
 /// wire layer, decides when an upload is too large.
 const MAX_BODY_BYTES: usize = 16 * 1024 * 1024;
-const DEFAULT_WORKERS: usize = 4;
-const DEFAULT_INGEST_RPS: u32 = 100;
 
 fn build_app(state: AppState) -> ExecutableApp {
     let plugin = security_schemes()
@@ -54,10 +52,9 @@ fn build_app(state: AppState) -> ExecutableApp {
 
 fn main() -> std::io::Result<()> {
     let state = AppState::load()?;
-    let workers = NonZeroUsize::new(env_number("BLAZINGLY_BENCH_WORKERS", DEFAULT_WORKERS))
-        .unwrap_or(NonZeroUsize::MIN);
-    let ingest_per_second =
-        env_number("APIBENCH_INGEST_RPS", DEFAULT_INGEST_RPS as usize);
+    let workers =
+        NonZeroUsize::new(env_number("BLAZINGLY_BENCH_WORKERS", 4)).unwrap_or(NonZeroUsize::MIN);
+    let ingest_per_second = env_number("APIBENCH_INGEST_RPS", 100) as u32;
     let buckets = SharedRateLimitStore::default();
 
     MulticoreServer::new(workers, move || build_app(state.clone()))
@@ -66,7 +63,7 @@ fn main() -> std::io::Result<()> {
             let security = Security::new()
                 .verifier("editorial", OAuth2Bearer::new(EditorialTokens))
                 .verifier("ingestion", ScraperApiKey);
-            let throttle = IngestRateLimit::new(ingest_per_second as u32, buckets.clone());
+            let throttle = IngestRateLimit::new(ingest_per_second, buckets.clone());
             vec![
                 Rc::new(security) as Rc<dyn HttpMiddleware>,
                 Rc::new(throttle) as Rc<dyn HttpMiddleware>,

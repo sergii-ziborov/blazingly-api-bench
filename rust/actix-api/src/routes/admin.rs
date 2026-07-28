@@ -11,7 +11,7 @@ use crate::auth::{Admin, Editor};
 use crate::clock;
 use crate::dto;
 use crate::error::{ApiError, FieldError};
-use crate::store::{AppState, Article};
+use crate::store::{self, AppState, Article};
 use crate::validation::{self, CreateArticle, PatchArticle, PublishRequest};
 
 const MAX_COVER_BYTES: usize = 10 * 1024 * 1024;
@@ -25,6 +25,7 @@ pub fn new_article(id: u64, input: CreateArticle) -> Article {
     Article {
         id,
         reading_minutes: reading_minutes(&input.body),
+        haystack: store::haystack(&input.title, &input.excerpt),
         slug: input.slug,
         title: input.title,
         excerpt: input.excerpt,
@@ -128,6 +129,7 @@ async fn patch_article(
         if let Some(value) = patch.tag_ids {
             article.tag_ids = value;
         }
+        article.haystack = store::haystack(&article.title, &article.excerpt);
         article.updated_at = clock::now();
     });
 

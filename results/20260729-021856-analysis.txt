@@ -1,0 +1,18 @@
+﻿host background CPU before: avg 20.5%  min 17.3%  max 25.9%
+host background CPU after: avg 19.0%  min 14.8%  max 21.7%
+
+## upload
+
+impl         n   median rps        min        max  spread        p50        p99   cpu%  peak MiB
+blazingly    5          352        347        378   1.09x   15.462ms   51.531ms    334     106.6
+axum         5          652        630        662   1.05x    9.278ms   18.771ms    372      33.5
+actix        5          669        659        671   1.02x    9.354ms   15.932ms    374      32.2
+tokio        5          650        650        658   1.01x    9.266ms   19.241ms    370      36.0
+fastapi      4           64         58         67   1.16x   95.453ms  167.802ms    436     315.0
+
+  rust group: gap 1.90x (actix over blazingly), noise band 1.01x-1.09x
+  verdict: REAL (ranges do not overlap)
+  actix over fastapi: 10.54x, ranges do not overlap
+
+discarded samples (excluded from every figure above):
+  fastapi    upload  round 5  errors=4 mismatches=0

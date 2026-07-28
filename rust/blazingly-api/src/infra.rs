@@ -13,36 +13,28 @@ use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll};
 use std::time::{Duration, Instant};
 
-use crate::api::summary_of;
 use crate::store::AppState;
 
-pub const EDITORIAL_SCHEME: &str = "editorial";
-pub const INGESTION_SCHEME: &str = "ingestion";
 const INGESTION_KEY: &str = "scraper-key";
 
 pub fn security_schemes() -> [SecuritySchemeDescriptor; 2] {
+    // The contract's editorial credential is a plain `Authorization: Bearer`
+    // token, but an operation may only require scopes from a scheme declared as
+    // OAuth2 — `Http { scheme: "bearer" }` rejects them at build time. Declaring
+    // OAuth2 keeps the 401/403 split inside the security layer at the cost of an
+    // OpenAPI document that calls a static bearer token an OAuth2 flow.
+    let editorial = SecuritySchemeKind::OAuth2 {
+        authorization_url: None,
+        token_url: None,
+        scopes: vec!["editor".to_owned(), "admin".to_owned()],
+    };
+    let ingestion = SecuritySchemeKind::ApiKey {
+        location: blazingly::SecurityLocation::Header,
+        name: "x-api-key".to_owned(),
+    };
     [
-        // The contract's editorial credential is a plain `Authorization:
-        // Bearer` token, but an operation may only require scopes from a
-        // scheme declared as OAuth2 — `Http { scheme: "bearer" }` rejects them
-        // at build time. Declaring OAuth2 keeps the 401/403 split inside the
-        // security layer at the cost of an OpenAPI document that calls a static
-        // bearer token an OAuth2 flow.
-        SecuritySchemeDescriptor::new(
-            EDITORIAL_SCHEME,
-            SecuritySchemeKind::OAuth2 {
-                authorization_url: None,
-                token_url: None,
-                scopes: vec!["editor".to_owned(), "admin".to_owned()],
-            },
-        ),
-        SecuritySchemeDescriptor::new(
-            INGESTION_SCHEME,
-            SecuritySchemeKind::ApiKey {
-                location: blazingly::SecurityLocation::Header,
-                name: "x-api-key".to_owned(),
-            },
-        ),
+        SecuritySchemeDescriptor::new("editorial", editorial),
+        SecuritySchemeDescriptor::new("ingestion", ingestion),
     ]
 }
 
@@ -61,7 +53,7 @@ impl TokenVerifier for EditorialTokens {
         Ok(VerifiedToken {
             subject: Some(token.to_owned()),
             scopes,
-            claims: serde_json::Value::Null,
+            claims: blazingly::json::Value::Null,
         })
     }
 }
@@ -87,26 +79,22 @@ impl CredentialVerifier for ScraperApiKey {
             .request()
             .header_value(name, 0)
             .ok_or(AuthenticationError::Missing)?;
-        if !constant_time_eq(supplied.as_bytes(), INGESTION_KEY.as_bytes()) {
+        let mismatch = supplied.len() != INGESTION_KEY.len()
+            || supplied
+                .bytes()
+                .zip(INGESTION_KEY.bytes())
+                .fold(0_u8, |difference, (a, b)| difference | (a ^ b))
+                != 0;
+        if mismatch {
             return Err(AuthenticationError::Invalid("API key does not match"));
         }
         Ok(AuthenticatedIdentity {
             scheme: String::new(),
             subject: Some("scraper".to_owned()),
             scopes: Vec::new(),
-            claims: serde_json::Value::Null,
+            claims: blazingly::json::Value::Null,
         })
     }
-}
-
-fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
-    if left.len() != right.len() {
-        return false;
-    }
-    left.iter()
-        .zip(right)
-        .fold(0_u8, |difference, (a, b)| difference | (a ^ b))
-        == 0
 }
 
 // ---------------------------------------------------------------------------
@@ -251,8 +239,9 @@ impl BodyStream for ArticleFeed {
                 .read()
                 .unwrap_or_else(|error| error.into_inner());
             articles
-                .newest()
-                .map(|article| summary_of(&feed.state.corpus, article))
+                .ordered
+                .first()
+                .map(|article| article.summary.clone())
         };
         let mut chunk = Vec::with_capacity(1024);
         if let Some(summary) = newest

@@ -441,6 +441,7 @@ dependencies = [
  "blazingly-docs",
  "blazingly-executor",
  "blazingly-http",
+ "blazingly-json",
  "blazingly-macros",
  "blazingly-mcp",
  "blazingly-middleware",
@@ -451,7 +452,6 @@ dependencies = [
  "blazingly-security",
  "blazingly-validation",
  "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -478,6 +478,7 @@ name = "blazingly-core"
 version = "0.0.1"
 dependencies = [
  "blazingly-contract",
+ "blazingly-json",
  "serde",
 ]
 
@@ -498,8 +499,8 @@ version = "0.0.1"
 dependencies = [
  "blazingly-core",
  "blazingly-deploy",
+ "blazingly-json",
  "blazingly-validation",
- "serde_json",
 ]
 
 [[package]]
@@ -509,9 +510,9 @@ dependencies = [
  "base64",
  "blazingly-core",
  "blazingly-di",
+ "blazingly-json",
  "blazingly-validation",
  "serde",
- "serde_json",
  "serde_path_to_error",
 ]
 
@@ -521,9 +522,20 @@ version = "0.0.1"
 dependencies = [
  "blazingly-core",
  "blazingly-executor",
+ "blazingly-json",
  "blazingly-openapi",
  "serde",
- "serde_json",
+]
+
+[[package]]
+name = "blazingly-json"
+version = "0.1.0"
+dependencies = [
+ "itoa",
+ "lexical-core",
+ "memchr",
+ "serde",
+ "zmij",
 ]
 
 [[package]]
@@ -541,9 +553,9 @@ version = "0.0.1"
 dependencies = [
  "blazingly-core",
  "blazingly-executor",
+ "blazingly-json",
  "blazingly-validation",
  "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -552,10 +564,10 @@ version = "0.0.1"
 dependencies = [
  "blazingly-core",
  "blazingly-http",
+ "blazingly-json",
  "brotli",
  "flate2",
  "httpdate",
- "serde_json",
 ]
 
 [[package]]
@@ -589,8 +601,8 @@ name = "blazingly-openapi"
 version = "0.0.1"
 dependencies = [
  "blazingly-core",
+ "blazingly-json",
  "blazingly-validation",
- "serde_json",
 ]
 
 [[package]]
@@ -600,8 +612,8 @@ dependencies = [
  "base64",
  "blazingly-core",
  "blazingly-executor",
+ "blazingly-json",
  "serde",
- "serde_json",
  "sha1 0.10.7",
 ]
 
@@ -613,9 +625,9 @@ dependencies = [
  "blazingly-core",
  "blazingly-executor",
  "blazingly-http",
+ "blazingly-json",
  "hmac",
  "serde",
- "serde_json",
  "sha2",
  "uuid",
 ]
@@ -625,9 +637,9 @@ name = "blazingly-validation"
 version = "0.0.1"
 dependencies = [
  "blazingly-core",
+ "blazingly-json",
  "rust_decimal",
  "serde",
- "serde_json",
  "time",
  "url",
  "uuid",
@@ -1825,6 +1837,63 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4345964bb142484797b161f473a503a434de77149dd8c7427788c6e13379388"
 
 [[package]]
+name = "lexical-core"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d8d125a277f807e55a77304455eb7b1cb52f2b18c143b60e766c120bd64a594"
+dependencies = [
+ "lexical-parse-float",
+ "lexical-parse-integer",
+ "lexical-util",
+ "lexical-write-float",
+ "lexical-write-integer",
+]
+
+[[package]]
+name = "lexical-parse-float"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52a9f232fbd6f550bc0137dcb5f99ab674071ac2d690ac69704593cb4abbea56"
+dependencies = [
+ "lexical-parse-integer",
+ "lexical-util",
+]
+
+[[package]]
+name = "lexical-parse-integer"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a7a039f8fb9c19c996cd7b2fcce303c1b2874fe1aca544edc85c4a5f8489b34"
+dependencies = [
+ "lexical-util",
+]
+
+[[package]]
+name = "lexical-util"
+version = "1.0.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2604dd126bb14f13fb5d1bd6a66155079cb9fa655b37f875b3a742c705dbed17"
+
+[[package]]
+name = "lexical-write-float"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50c438c87c013188d415fbabbb1dceb44249ab81664efbd31b14ae55dabb6361"
+dependencies = [
+ "lexical-util",
+ "lexical-write-integer",
+]
+
+[[package]]
+name = "lexical-write-integer"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "409851a618475d2d5796377cad353802345cba92c867d9fbcde9cf4eac4e14df"
+dependencies = [
+ "lexical-util",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.189"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2825,6 +2894,21 @@ dependencies = [
  "socket2 0.6.5",
  "tokio-macros",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "tokio-api"
+version = "0.0.0"
+dependencies = [
+ "bytes",
+ "chrono",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "multer",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

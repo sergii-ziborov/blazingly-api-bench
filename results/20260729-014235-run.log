@@ -1,0 +1,178 @@
+starting every implementation for the equivalence check...
+  blazingly ready on 3201
+  axum ready on 3202
+  actix ready on 3203
+  tokio ready on 3204
+  fastapi ready on 3205
+all 120 checks agree across blazingly, axum, actix, tokio, fastapi
+host CPU before the run: avg 31.3%  min 25.7%  max 37.9%
+blazingly  list    round 1      27,542 rps  p50 1.629ms    p99 7.250ms    cpu  356%  rss   26.8 MiB  host 33.5%
+axum       list    round 1      20,246 rps  p50 2.256ms    p99 7.105ms    cpu  316%  rss   25.1 MiB  host 33%
+actix      list    round 1      20,175 rps  p50 2.205ms    p99 7.214ms    cpu  346%  rss   27.3 MiB  host 30.9%
+tokio      list    round 1      17,329 rps  p50 2.710ms    p99 7.494ms    cpu  303%  rss   24.5 MiB  host 58.4%
+fastapi    list    round 1       1,962 rps  p50 22.864ms   p99 75.311ms   cpu  337%  rss  296.8 MiB  host 74.5%
+blazingly  detail  round 1      22,305 rps  p50 1.377ms    p99 15.380ms   cpu  250%  rss   25.5 MiB  host 75.8%
+axum       detail  round 1      22,032 rps  p50 2.116ms    p99 6.123ms    cpu  285%  rss   25.1 MiB  host 69.7%
+actix      detail  round 1      25,308 rps  p50 1.664ms    p99 6.770ms    cpu  300%  rss   25.4 MiB  host 56.9%
+tokio      detail  round 1      27,066 rps  p50 1.681ms    p99 5.396ms    cpu  295%  rss   24.5 MiB  host 47.2%
+fastapi    detail  round 1       3,610 rps  p50 12.555ms   p99 41.186ms   cpu  386%  rss  297.0 MiB  host 32.5%
+blazingly  filter  round 1      17,894 rps  p50 2.229ms    p99 14.246ms   cpu  319%  rss   26.8 MiB  host 53.9%
+axum       filter  round 1      13,230 rps  p50 3.452ms    p99 11.019ms   cpu  272%  rss   25.9 MiB  host 69%
+actix      filter  round 1      15,280 rps  p50 2.645ms    p99 12.855ms   cpu  300%  rss   26.6 MiB  host 70.7%
+tokio      filter  round 1      13,904 rps  p50 3.242ms    p99 10.955ms   cpu  279%  rss   24.5 MiB  host 75.8%
+fastapi    filter  round 1       2,422 rps  p50 19.333ms   p99 54.271ms   cpu  383%  rss  296.9 MiB  host 51.2%
+blazingly  search  round 1      18,647 rps  p50 2.213ms    p99 11.505ms   cpu  321%  rss   25.1 MiB  host 38.7%
+axum       search  round 1      14,908 rps  p50 3.146ms    p99 8.973ms    cpu  298%  rss   24.5 MiB  host 69.1%
+actix      search  round 1      14,541 rps  p50 2.859ms    p99 13.062ms   cpu  256%  rss   24.9 MiB  host 79.3%
+tokio      search  round 1      13,184 rps  p50 3.327ms    p99 12.660ms   cpu  248%  rss   24.6 MiB  host 70.3%
+fastapi    search  round 1       2,905 rps  p50 16.059ms   p99 43.240ms   cpu  390%  rss  296.8 MiB  host 49.5%
+blazingly  bulk    round 1       8,104 rps  p50 5.603ms    p99 19.931ms   cpu  321%  rss   28.8 MiB  host 49%
+axum       bulk    round 1       5,954 rps  p50 7.812ms    p99 22.813ms   cpu  294%  rss   26.6 MiB  host 54.8%
+actix      bulk    round 1       4,916 rps  p50 9.851ms    p99 18.848ms   cpu  216%  rss   27.6 MiB  host 77.7%
+tokio      bulk    round 1       8,495 rps  p50 5.478ms    p99 15.879ms   cpu  288%  rss   25.8 MiB  host 76.1%
+fastapi    bulk    round 1       1,282 rps  p50 37.120ms   p99 85.832ms   cpu  362%  rss  303.8 MiB  host 53.2%
+blazingly  list    round 2      18,949 rps  p50 2.105ms    p99 14.249ms   cpu  308%  rss   26.7 MiB  host 68.2%
+axum       list    round 2      19,337 rps  p50 2.353ms    p99 7.529ms    cpu  318%  rss   25.4 MiB  host 56.8%
+actix      list    round 2      18,496 rps  p50 2.387ms    p99 7.801ms    cpu  338%  rss   30.3 MiB  host 57.9%
+tokio      list    round 2      19,530 rps  p50 2.356ms    p99 7.176ms    cpu  313%  rss   24.6 MiB  host 38.5%
+fastapi    list    round 2       1,871 rps  p50 25.869ms   p99 51.883ms   cpu  311%  rss  296.8 MiB  host 60.6%
+blazingly  detail  round 2      25,664 rps  p50 1.359ms    p99 11.208ms   cpu  269%  rss   27.1 MiB  host 57.9%
+axum       detail  round 2      22,363 rps  p50 2.083ms    p99 6.013ms    cpu  285%  rss   25.3 MiB  host 60.4%
+actix      detail  round 2      22,544 rps  p50 1.835ms    p99 8.603ms    cpu  279%  rss   25.2 MiB  host 66.5%
+tokio      detail  round 2      22,346 rps  p50 2.033ms    p99 6.733ms    cpu  272%  rss   24.5 MiB  host 70.4%
+fastapi    detail  round 2       2,963 rps  p50 15.605ms   p99 46.508ms   cpu  379%  rss  297.2 MiB  host 60.8%
+blazingly  filter  round 2      16,374 rps  p50 2.272ms    p99 17.113ms   cpu  302%  rss   26.6 MiB  host 54%
+axum       filter  round 2      14,733 rps  p50 3.173ms    p99 9.067ms    cpu  294%  rss   25.3 MiB  host 78.9%
+actix      filter  round 2      14,301 rps  p50 2.772ms    p99 15.114ms   cpu  282%  rss   26.7 MiB  host 80.7%
+tokio      filter  round 2      15,506 rps  p50 3.031ms    p99 8.571ms    cpu  289%  rss   24.5 MiB  host 81.3%
+fastapi    filter  round 2       2,260 rps  p50 21.236ms   p99 55.569ms   cpu  378%  rss  296.7 MiB  host 54.6%
+blazingly  search  round 2      21,956 rps  p50 1.950ms    p99 9.200ms    cpu  344%  rss   25.1 MiB  host 30.5%
+axum       search  round 2      19,715 rps  p50 2.377ms    p99 6.699ms    cpu  328%  rss   24.5 MiB  host 30.9%
+actix      search  round 2      17,510 rps  p50 2.423ms    p99 8.929ms    cpu  305%  rss   24.5 MiB  host 46.9%
+tokio      search  round 2      20,701 rps  p50 2.242ms    p99 6.686ms    cpu  319%  rss   24.6 MiB  host 61.4%
+fastapi    search  round 2       3,094 rps  p50 15.056ms   p99 35.782ms   cpu  398%  rss  296.7 MiB  host 27.9%
+blazingly  bulk    round 2      10,562 rps  p50 4.465ms    p99 10.694ms   cpu  351%  rss   28.3 MiB  host 29.7%
+axum       bulk    round 2       9,021 rps  p50 5.174ms    p99 15.035ms   cpu  356%  rss   26.5 MiB  host 30.7%
+actix      bulk    round 2       7,050 rps  p50 7.029ms    p99 12.476ms   cpu  205%  rss   27.2 MiB  host 32%
+tokio      bulk    round 2      12,571 rps  p50 3.690ms    p99 11.055ms   cpu  325%  rss   25.9 MiB  host 32.7%
+fastapi    bulk    round 2       1,582 rps  p50 29.804ms   p99 72.566ms   cpu  384%  rss  303.0 MiB  host 53.4%
+blazingly  list    round 3      27,089 rps  p50 1.657ms    p99 7.297ms    cpu  356%  rss   26.4 MiB  host 29.1%
+axum       list    round 3      22,558 rps  p50 2.007ms    p99 6.392ms    cpu  331%  rss   25.6 MiB  host 29.2%
+actix      list    round 3      21,321 rps  p50 2.091ms    p99 6.864ms    cpu  343%  rss   27.0 MiB  host 29.2%
+tokio      list    round 3      23,825 rps  p50 1.895ms    p99 6.139ms    cpu  322%  rss   24.6 MiB  host 27.6%
+fastapi    list    round 3       2,651 rps  p50 17.567ms   p99 51.571ms   cpu  385%  rss  297.0 MiB  host 32.3%
+blazingly  detail  round 3      29,744 rps  p50 1.177ms    p99 9.905ms    cpu  306%  rss   25.5 MiB  host 30.5%
+axum       detail  round 3      29,367 rps  p50 1.542ms    p99 4.821ms    cpu  323%  rss   24.7 MiB  host 49.1%
+actix      detail  round 3      33,396 rps  p50 1.324ms    p99 4.396ms    cpu  346%  rss   25.2 MiB  host 20.1%
+tokio      detail  round 3      34,877 rps  p50 1.282ms    p99 4.253ms    cpu  318%  rss   24.5 MiB  host 28.6%
+fastapi    detail  round 3       3,382 rps  p50 13.765ms   p99 39.050ms   cpu  395%  rss  296.8 MiB  host 42.7%
+blazingly  filter  round 3      22,138 rps  p50 1.948ms    p99 9.404ms    cpu  347%  rss   26.4 MiB  host 22.1%
+axum       filter  round 3      20,917 rps  p50 2.144ms    p99 7.081ms    cpu  335%  rss   26.1 MiB  host 17.9%
+actix      filter  round 3      20,789 rps  p50 2.185ms    p99 6.752ms    cpu  358%  rss   26.9 MiB  host 19.3%
+tokio      filter  round 3      19,980 rps  p50 2.318ms    p99 6.836ms    cpu  318%  rss   24.6 MiB  host 29.2%
+fastapi    filter  round 3       2,793 rps  p50 16.130ms   p99 49.770ms   cpu  394%  rss  297.2 MiB  host 33.4%
+blazingly  search  round 3      27,945 rps  p50 1.629ms    p99 6.122ms    cpu  361%  rss   25.1 MiB  host 21%
+axum       search  round 3      24,261 rps  p50 1.852ms    p99 6.036ms    cpu  340%  rss   24.6 MiB  host 20.8%
+actix      search  round 3      29,197 rps  p50 1.663ms    p99 4.503ms    cpu  364%  rss   24.5 MiB  host 21.7%
+tokio      search  round 3      26,868 rps  p50 1.666ms    p99 5.390ms    cpu  335%  rss   24.5 MiB  host 19.8%
+fastapi    search  round 3       3,632 rps  p50 13.329ms   p99 34.129ms   cpu  409%  rss  297.0 MiB  host 21.7%
+blazingly  bulk    round 3      11,588 rps  p50 4.033ms    p99 9.145ms    cpu  356%  rss   28.3 MiB  host 20%
+axum       bulk    round 3       7,508 rps  p50 6.200ms    p99 18.297ms   cpu  336%  rss   26.8 MiB  host 43.5%
+actix      bulk    round 3       7,696 rps  p50 6.079ms    p99 11.923ms   cpu  204%  rss   27.4 MiB  host 47.3%
+tokio      bulk    round 3      11,963 rps  p50 3.891ms    p99 11.498ms   cpu  325%  rss   25.8 MiB  host 23.3%
+fastapi    bulk    round 3       1,977 rps  p50 22.629ms   p99 58.318ms   cpu  395%  rss  302.6 MiB  host 21.2%
+blazingly  list    round 4      31,372 rps  p50 1.456ms    p99 5.555ms    cpu  368%  rss   26.7 MiB  host 25.6%
+axum       list    round 4      19,538 rps  p50 2.349ms    p99 7.249ms    cpu  328%  rss   25.9 MiB  host 18.6%
+actix      list    round 4      25,053 rps  p50 1.904ms    p99 5.545ms    cpu  362%  rss   26.8 MiB  host 25.4%
+tokio      list    round 4      24,323 rps  p50 1.858ms    p99 5.948ms    cpu  339%  rss   24.6 MiB  host 26.2%
+fastapi    list    round 4       2,432 rps  p50 18.735ms   p99 54.571ms   cpu  385%  rss  297.1 MiB  host 52.6%
+blazingly  detail  round 4      26,006 rps  p50 1.329ms    p99 11.677ms   cpu  286%  rss   25.3 MiB  host 62.4%
+axum       detail  round 4      25,396 rps  p50 1.839ms    p99 5.173ms    cpu  304%  rss   25.3 MiB  host 59%
+actix      detail  round 4      25,493 rps  p50 1.649ms    p99 6.815ms    cpu  298%  rss   25.2 MiB  host 62.6%
+tokio      detail  round 4      27,160 rps  p50 1.721ms    p99 4.870ms    cpu  298%  rss   24.5 MiB  host 56.1%
+fastapi    detail  round 4       4,516 rps  p50 9.939ms    p99 33.370ms   cpu  407%  rss  297.0 MiB  host 29.2%
+blazingly  filter  round 4      25,376 rps  p50 1.725ms    p99 7.935ms    cpu  351%  rss   26.6 MiB  host 42.1%
+axum       filter  round 4      21,504 rps  p50 2.120ms    p99 6.571ms    cpu  339%  rss   25.8 MiB  host 36.6%
+actix      filter  round 4      24,755 rps  p50 1.920ms    p99 5.600ms    cpu  364%  rss   26.5 MiB  host 51.9%
+tokio      filter  round 4      15,405 rps  p50 2.961ms    p99 9.296ms    cpu  300%  rss   24.5 MiB  host 37.4%
+fastapi    filter  round 4       2,742 rps  p50 17.224ms   p99 44.831ms   cpu  397%  rss  297.2 MiB  host 61.9%
+blazingly  search  round 4      27,171 rps  p50 1.670ms    p99 6.501ms    cpu  363%  rss   25.4 MiB  host 37.1%
+axum       search  round 4      26,066 rps  p50 1.700ms    p99 5.680ms    cpu  336%  rss   24.5 MiB  host 20.5%
+actix      search  round 4      29,703 rps  p50 1.649ms    p99 4.487ms    cpu  363%  rss   24.6 MiB  host 20.5%
+tokio      search  round 4      26,813 rps  p50 1.641ms    p99 5.770ms    cpu  332%  rss   24.5 MiB  host 22.1%
+WARNING: fastapi/search round 4 discarded: 8 connection errors, 0 status mismatches
+blazingly  bulk    round 4      10,412 rps  p50 4.568ms    p99 10.439ms   cpu  359%  rss   28.5 MiB  host 18.7%
+axum       bulk    round 4       9,668 rps  p50 4.806ms    p99 14.148ms   cpu  349%  rss   26.8 MiB  host 20.3%
+actix      bulk    round 4       6,765 rps  p50 7.548ms    p99 13.786ms   cpu  213%  rss   27.4 MiB  host 48.4%
+tokio      bulk    round 4      11,752 rps  p50 3.990ms    p99 11.449ms   cpu  330%  rss   25.7 MiB  host 23.1%
+fastapi    bulk    round 4       1,391 rps  p50 34.398ms   p99 81.903ms   cpu  377%  rss  303.6 MiB  host 35.4%
+blazingly  list    round 5      24,292 rps  p50 1.792ms    p99 8.918ms    cpu  345%  rss   26.6 MiB  host 64.2%
+axum       list    round 5      15,788 rps  p50 2.912ms    p99 9.147ms    cpu  296%  rss   25.1 MiB  host 63.7%
+actix      list    round 5      16,787 rps  p50 2.524ms    p99 10.392ms   cpu  308%  rss   26.9 MiB  host 62.2%
+tokio      list    round 5      17,443 rps  p50 2.658ms    p99 7.992ms    cpu  292%  rss   24.5 MiB  host 58.9%
+fastapi    list    round 5       2,386 rps  p50 19.609ms   p99 55.147ms   cpu  385%  rss  296.9 MiB  host 66.9%
+blazingly  detail  round 5      27,833 rps  p50 1.312ms    p99 9.864ms    cpu  290%  rss   25.6 MiB  host 61.6%
+axum       detail  round 5      21,326 rps  p50 2.155ms    p99 6.613ms    cpu  271%  rss   24.8 MiB  host 76.5%
+actix      detail  round 5      23,672 rps  p50 1.678ms    p99 8.281ms    cpu  265%  rss   25.4 MiB  host 73%
+tokio      detail  round 5      24,559 rps  p50 1.916ms    p99 5.303ms    cpu  266%  rss   24.5 MiB  host 70.2%
+fastapi    detail  round 5       3,121 rps  p50 15.245ms   p99 44.489ms   cpu  389%  rss  296.6 MiB  host 63%
+blazingly  filter  round 5      22,867 rps  p50 1.863ms    p99 9.149ms    cpu  351%  rss  897.3 MiB  host 22%
+axum       filter  round 5      19,155 rps  p50 2.413ms    p99 7.252ms    cpu  331%  rss   25.7 MiB  host 36.6%
+actix      filter  round 5      21,247 rps  p50 2.175ms    p99 6.290ms    cpu  357%  rss   26.8 MiB  host 20.3%
+tokio      filter  round 5      22,030 rps  p50 2.066ms    p99 6.428ms    cpu  327%  rss   24.5 MiB  host 21.3%
+fastapi    filter  round 5       3,391 rps  p50 13.863ms   p99 34.234ms   cpu  411%  rss  297.3 MiB  host 22.6%
+blazingly  search  round 5      28,669 rps  p50 1.609ms    p99 5.809ms    cpu  368%  rss   25.1 MiB  host 19.7%
+axum       search  round 5      24,694 rps  p50 1.823ms    p99 5.917ms    cpu  339%  rss   24.5 MiB  host 50.4%
+actix      search  round 5      26,015 rps  p50 1.792ms    p99 5.285ms    cpu  360%  rss   24.7 MiB  host 36.5%
+tokio      search  round 5      25,068 rps  p50 1.822ms    p99 5.566ms    cpu  331%  rss   24.5 MiB  host 30.8%
+WARNING: fastapi/search round 5 discarded: 16 connection errors, 0 status mismatches
+blazingly  bulk    round 5      10,859 rps  p50 4.331ms    p99 9.873ms    cpu  358%  rss   29.0 MiB  host 22%
+axum       bulk    round 5       9,516 rps  p50 4.896ms    p99 14.374ms   cpu  360%  rss   26.9 MiB  host 22.1%
+actix      bulk    round 5       8,328 rps  p50 5.604ms    p99 10.354ms   cpu  209%  rss   27.6 MiB  host 29.2%
+tokio      bulk    round 5      13,831 rps  p50 3.329ms    p99 10.208ms   cpu  331%  rss   25.6 MiB  host 28.8%
+fastapi    bulk    round 5       1,758 rps  p50 26.504ms   p99 62.171ms   cpu  395%  rss  303.4 MiB  host 19.9%
+API comparison: 64 connections, 8s per sample, 2s warmup, 5 rounds, 4 workers
+
+host background CPU before: avg 31.3%  min 25.7%  max 37.9%
+host background CPU after:  avg 27.8%  min 18.8%  max 38.5%
+
+scenario: list
+  blazingly  median     27,089 rps   range     18,949 - 31,372     spread 1.66x  p50 1.657ms    p99 7.297ms    cpu  356%  peak RSS   26.4 MiB  host 26-68%  n=5
+  axum       median     19,538 rps   range     15,788 - 22,558     spread 1.43x  p50 2.349ms    p99 7.249ms    cpu  328%  peak RSS   25.9 MiB  host 19-64%  n=5
+  actix      median     20,175 rps   range     16,787 - 25,053     spread 1.49x  p50 2.205ms    p99 7.214ms    cpu  346%  peak RSS   27.3 MiB  host 25-62%  n=5
+  tokio      median     19,530 rps   range     17,329 - 24,323     spread 1.40x  p50 2.356ms    p99 7.176ms    cpu  313%  peak RSS   24.6 MiB  host 26-59%  n=5
+  fastapi    median      2,386 rps   range      1,871 - 2,651      spread 1.42x  p50 19.609ms   p99 55.147ms   cpu  385%  peak RSS  296.9 MiB  host 32-75%  n=5
+
+scenario: detail
+  blazingly  median     26,006 rps   range     22,305 - 29,744     spread 1.33x  p50 1.329ms    p99 11.677ms   cpu  286%  peak RSS   25.2 MiB  host 31-76%  n=5
+  axum       median     22,363 rps   range     21,326 - 29,367     spread 1.38x  p50 2.083ms    p99 6.013ms    cpu  285%  peak RSS   25.3 MiB  host 49-77%  n=5
+  actix      median     25,308 rps   range     22,544 - 33,396     spread 1.48x  p50 1.664ms    p99 6.770ms    cpu  300%  peak RSS   25.4 MiB  host 20-73%  n=5
+  tokio      median     27,066 rps   range     22,346 - 34,877     spread 1.56x  p50 1.681ms    p99 5.396ms    cpu  295%  peak RSS   24.5 MiB  host 29-70%  n=5
+  fastapi    median      3,382 rps   range      2,963 - 4,516      spread 1.52x  p50 13.765ms   p99 39.050ms   cpu  395%  peak RSS  296.8 MiB  host 29-63%  n=5
+
+scenario: filter
+  blazingly  median     22,138 rps   range     16,374 - 25,376     spread 1.55x  p50 1.948ms    p99 9.404ms    cpu  347%  peak RSS   26.4 MiB  host 22-54%  n=5
+  axum       median     19,155 rps   range     13,230 - 21,504     spread 1.63x  p50 2.413ms    p99 7.252ms    cpu  331%  peak RSS   25.7 MiB  host 18-79%  n=5
+  actix      median     20,789 rps   range     14,301 - 24,755     spread 1.73x  p50 2.185ms    p99 6.752ms    cpu  358%  peak RSS   26.9 MiB  host 19-81%  n=5
+  tokio      median     15,506 rps   range     13,904 - 22,030     spread 1.58x  p50 3.031ms    p99 8.571ms    cpu  289%  peak RSS   24.5 MiB  host 21-81%  n=5
+  fastapi    median      2,742 rps   range      2,260 - 3,391      spread 1.50x  p50 17.224ms   p99 44.831ms   cpu  397%  peak RSS  297.2 MiB  host 23-62%  n=5
+
+scenario: search
+  blazingly  median     27,171 rps   range     18,647 - 28,669     spread 1.54x  p50 1.670ms    p99 6.501ms    cpu  363%  peak RSS   25.4 MiB  host 20-39%  n=5
+  axum       median     24,261 rps   range     14,908 - 26,066     spread 1.75x  p50 1.852ms    p99 6.036ms    cpu  340%  peak RSS   24.6 MiB  host 21-69%  n=5
+  actix      median     26,015 rps   range     14,541 - 29,703     spread 2.04x  p50 1.792ms    p99 5.285ms    cpu  360%  peak RSS   24.7 MiB  host 21-79%  n=5
+  tokio      median     25,068 rps   range     13,184 - 26,868     spread 2.04x  p50 1.822ms    p99 5.566ms    cpu  331%  peak RSS   24.5 MiB  host 20-70%  n=5
+  fastapi    median      3,094 rps   range      2,905 - 3,632      spread 1.25x  p50 15.056ms   p99 35.782ms   cpu  398%  peak RSS  296.7 MiB  host 22-50%  n=3
+
+scenario: bulk
+  blazingly  median     10,562 rps   range      8,104 - 11,588     spread 1.43x  p50 4.465ms    p99 10.694ms   cpu  351%  peak RSS   28.3 MiB  host 19-49%  n=5
+  axum       median      9,021 rps   range      5,954 - 9,668      spread 1.62x  p50 5.174ms    p99 15.035ms   cpu  356%  peak RSS   26.5 MiB  host 20-55%  n=5
+  actix      median      7,050 rps   range      4,916 - 8,328      spread 1.69x  p50 7.029ms    p99 12.476ms   cpu  205%  peak RSS   27.2 MiB  host 29-78%  n=5
+  tokio      median     11,963 rps   range      8,495 - 13,831     spread 1.63x  p50 3.891ms    p99 11.498ms   cpu  325%  peak RSS   25.8 MiB  host 23-76%  n=5
+  fastapi    median      1,582 rps   range      1,282 - 1,977      spread 1.54x  p50 29.804ms   p99 72.566ms   cpu  384%  peak RSS  303.0 MiB  host 20-53%  n=5
+
+discarded samples (excluded from every median above):
+  fastapi    search  round 4  connection errors  errors=8 mismatches=0
+  fastapi    search  round 5  connection errors  errors=16 mismatches=0
+
+wrote C:\Users\SergiiZiborov\Documents\GitHub\MyProjects\blazingly-apibench\results\20260729-014235-summary.txt

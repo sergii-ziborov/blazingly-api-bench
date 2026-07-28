@@ -1,0 +1,42 @@
+host CPU before the run: avg 20.5%  min 17.3%  max 25.9%
+blazingly  upload  round 1         378 rps  p50 14.477ms   p99 50.921ms   cpu  331%  rss  106.4 MiB  host 17.9%
+axum       upload  round 1         652 rps  p50 9.278ms    p99 18.771ms   cpu  364%  rss   33.5 MiB  host 18.5%
+actix      upload  round 1         659 rps  p50 9.363ms    p99 18.907ms   cpu  373%  rss   32.2 MiB  host 21.1%
+tokio      upload  round 1         650 rps  p50 9.287ms    p99 19.244ms   cpu  370%  rss   36.4 MiB  host 25%
+fastapi    upload  round 1          61 rps  p50 83.334ms   p99 221.008ms  cpu  427%  rss  315.4 MiB  host 20.6%
+blazingly  upload  round 2         347 rps  p50 15.688ms   p99 49.691ms   cpu  335%  rss  106.2 MiB  host 21.5%
+axum       upload  round 2         646 rps  p50 9.325ms    p99 18.811ms   cpu  373%  rss   33.5 MiB  host 17.9%
+actix      upload  round 2         669 rps  p50 9.354ms    p99 15.932ms   cpu  374%  rss   32.0 MiB  host 21.9%
+tokio      upload  round 2         650 rps  p50 9.219ms    p99 19.196ms   cpu  366%  rss   35.8 MiB  host 19.8%
+fastapi    upload  round 2          58 rps  p50 98.521ms   p99 182.690ms  cpu  338%  rss  314.3 MiB  host 18%
+blazingly  upload  round 3         352 rps  p50 15.586ms   p99 51.518ms   cpu  329%  rss  107.6 MiB  host 28.7%
+axum       upload  round 3         662 rps  p50 9.070ms    p99 18.466ms   cpu  374%  rss   33.4 MiB  host 19.4%
+actix      upload  round 3         671 rps  p50 9.305ms    p99 16.669ms   cpu  376%  rss   33.0 MiB  host 23.2%
+tokio      upload  round 3         658 rps  p50 9.239ms    p99 18.406ms   cpu  373%  rss   36.1 MiB  host 20.7%
+fastapi    upload  round 3          66 rps  p50 95.453ms   p99 167.802ms  cpu  446%  rss  314.6 MiB  host 22.6%
+blazingly  upload  round 4         352 rps  p50 15.462ms   p99 51.531ms   cpu  334%  rss  107.1 MiB  host 18.9%
+axum       upload  round 4         654 rps  p50 9.187ms    p99 18.766ms   cpu  372%  rss   33.9 MiB  host 18%
+actix      upload  round 4         669 rps  p50 9.313ms    p99 16.309ms   cpu  372%  rss   32.5 MiB  host 20.1%
+tokio      upload  round 4         654 rps  p50 9.206ms    p99 18.633ms   cpu  370%  rss   35.8 MiB  host 19.9%
+fastapi    upload  round 4          67 rps  p50 94.380ms   p99 153.537ms  cpu  444%  rss  315.6 MiB  host 20%
+blazingly  upload  round 5         355 rps  p50 15.199ms   p99 51.993ms   cpu  334%  rss  106.6 MiB  host 17.8%
+axum       upload  round 5         630 rps  p50 9.517ms    p99 19.748ms   cpu  363%  rss   34.3 MiB  host 18.3%
+actix      upload  round 5         668 rps  p50 9.308ms    p99 16.514ms   cpu  376%  rss   32.0 MiB  host 19.7%
+tokio      upload  round 5         650 rps  p50 9.266ms    p99 19.241ms   cpu  372%  rss   36.0 MiB  host 16.6%
+WARNING: fastapi/upload round 5 discarded: 4 connection errors, 0 status mismatches
+API comparison: 8 connections, 8s per sample, 2s warmup, 5 rounds, 4 workers
+
+host background CPU before: avg 20.5%  min 17.3%  max 25.9%
+host background CPU after:  avg 19%  min 14.8%  max 21.7%
+
+scenario: upload
+  blazingly  median        352 rps   range        347 - 378        spread 1.09x  p50 15.586ms   p99 51.518ms   cpu  329%  peak RSS  107.6 MiB  host 18-29%  n=5
+  axum       median        652 rps   range        630 - 662        spread 1.05x  p50 9.278ms    p99 18.771ms   cpu  364%  peak RSS   33.5 MiB  host 18-19%  n=5
+  actix      median        669 rps   range        659 - 671        spread 1.02x  p50 9.354ms    p99 15.932ms   cpu  374%  peak RSS   32.0 MiB  host 20-23%  n=5
+  tokio      median        650 rps   range        650 - 658        spread 1.01x  p50 9.219ms    p99 19.196ms   cpu  366%  peak RSS   35.8 MiB  host 17-25%  n=5
+  fastapi    median         66 rps   range         58 - 67         spread 1.15x  p50 95.453ms   p99 167.802ms  cpu  446%  peak RSS  314.6 MiB  host 18-23%  n=4
+
+discarded samples (excluded from every median above):
+  fastapi    upload  round 5  connection errors  errors=4 mismatches=0
+
+wrote C:\Users\SergiiZiborov\Documents\GitHub\MyProjects\blazingly-apibench\results\20260729-021856-summary.txt

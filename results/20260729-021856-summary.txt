@@ -1,0 +1,15 @@
+﻿API comparison: 8 connections, 8s per sample, 2s warmup, 5 rounds, 4 workers
+
+host background CPU before: avg 20.5%  min 17.3%  max 25.9%
+host background CPU after:  avg 19%  min 14.8%  max 21.7%
+
+scenario: upload
+  blazingly  median        352 rps   range        347 - 378        spread 1.09x  p50 15.586ms   p99 51.518ms   cpu  329%  peak RSS  107.6 MiB  host 18-29%  n=5
+  axum       median        652 rps   range        630 - 662        spread 1.05x  p50 9.278ms    p99 18.771ms   cpu  364%  peak RSS   33.5 MiB  host 18-19%  n=5
+  actix      median        669 rps   range        659 - 671        spread 1.02x  p50 9.354ms    p99 15.932ms   cpu  374%  peak RSS   32.0 MiB  host 20-23%  n=5
+  tokio      median        650 rps   range        650 - 658        spread 1.01x  p50 9.219ms    p99 19.196ms   cpu  366%  peak RSS   35.8 MiB  host 17-25%  n=5
+  fastapi    median         66 rps   range         58 - 67         spread 1.15x  p50 95.453ms   p99 167.802ms  cpu  446%  peak RSS  314.6 MiB  host 18-23%  n=4
+
+discarded samples (excluded from every median above):
+  fastapi    upload  round 5  connection errors  errors=4 mismatches=0
+

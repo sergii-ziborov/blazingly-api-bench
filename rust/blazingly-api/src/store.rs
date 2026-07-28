@@ -11,155 +11,172 @@ use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 use std::time::Instant;
 
-#[derive(Clone, Debug, Deserialize)]
-pub struct Taxon {
-    pub id: u32,
-    pub slug: String,
-    pub name: String,
-}
+use crate::models::{
+    ArticleSummary, AuthorView, Company, CreateArticle, IngestRun, Ref, TaxonomyView,
+};
 
+/// One article as `data/seed.json` and the write endpoints describe it: the
+/// eight client-supplied fields plus the six the server owns.
 #[derive(Clone, Debug, Deserialize)]
-pub struct Author {
+pub struct RawArticle {
     pub id: u32,
-    pub slug: String,
-    pub name: String,
-    pub bio: String,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct Company {
-    pub id: u32,
-    pub slug: String,
-    pub name: String,
-    pub industry: String,
-    pub stage: String,
-    pub founded_year: u32,
-    pub employees: u32,
-    pub total_funding_usd: i64,
-    pub website: String,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct Article {
-    pub id: u32,
-    pub slug: String,
-    pub title: String,
-    pub excerpt: String,
-    pub body: String,
-    pub lang: String,
+    #[serde(flatten)]
+    pub input: CreateArticle,
     /// `None` for an article created through the editorial API and not yet
     /// published; publishing is what fills it in.
+    #[serde(default)]
     pub published_at: Option<String>,
     pub updated_at: String,
     pub reading_minutes: u32,
     pub views: u64,
-    pub category_id: u32,
-    pub author_id: u32,
-    pub tag_ids: Vec<u32>,
     pub cover_url: String,
+}
+
+/// One stored article: the exact public projection, plus what only the detail
+/// view and the substring filter need.
+#[derive(Clone, Debug)]
+pub struct Article {
+    pub summary: ArticleSummary,
+    pub body: String,
+    pub updated_at: String,
+    /// Lower-cased `title + excerpt`, built once when the article is stored so
+    /// `?q=` and `/search` do not lower-case a thousand strings per request.
+    pub haystack: String,
+}
+
+impl Article {
+    /// The contract's listing order: `published_at` descending, then `id`
+    /// descending, so an unpublished draft sorts last.
+    fn order_key(&self) -> (&str, u32) {
+        (
+            self.summary.published_at.as_deref().unwrap_or(""),
+            self.summary.id,
+        )
+    }
+}
+
+pub fn haystack(left: &str, right: &str) -> String {
+    format!("{left} {right}").to_lowercase()
 }
 
 #[derive(Debug, Deserialize)]
 struct Seed {
-    categories: Vec<Taxon>,
-    tags: Vec<Taxon>,
-    authors: Vec<Author>,
-    articles: Vec<Article>,
+    categories: Vec<TaxonomyView>,
+    tags: Vec<TaxonomyView>,
+    authors: Vec<AuthorView>,
+    articles: Vec<RawArticle>,
     companies: Vec<Company>,
 }
 
 /// Everything the contract never mutates.
+///
+/// Category, tag and author ids are contiguous from 1, so lookups index rather
+/// than hash; only the slug direction needs a map.
 pub struct Corpus {
-    pub categories: Vec<Taxon>,
-    pub tags: Vec<Taxon>,
-    pub authors: Vec<Author>,
+    pub categories: Vec<TaxonomyView>,
+    pub tags: Vec<TaxonomyView>,
+    pub authors: Vec<AuthorView>,
     pub companies: Vec<Company>,
-    category_by_id: HashMap<u32, usize>,
-    category_by_slug: HashMap<String, u32>,
-    tag_by_id: HashMap<u32, usize>,
-    tag_by_slug: HashMap<String, u32>,
-    author_by_id: HashMap<u32, usize>,
-    author_by_slug: HashMap<String, u32>,
+    /// Lower-cased `name + industry`, in `companies` order.
+    pub company_haystacks: Vec<String>,
+    pub category_by_slug: HashMap<String, u32>,
+    pub tag_by_slug: HashMap<String, u32>,
+    pub author_by_slug: HashMap<String, u32>,
 }
 
 impl Corpus {
     fn new(
-        categories: Vec<Taxon>,
-        tags: Vec<Taxon>,
-        authors: Vec<Author>,
+        categories: Vec<TaxonomyView>,
+        tags: Vec<TaxonomyView>,
+        authors: Vec<AuthorView>,
         companies: Vec<Company>,
     ) -> Self {
-        let category_by_id = index_by_id(&categories, |taxon| taxon.id);
-        let category_by_slug = index_by_slug(&categories, |taxon| (&taxon.slug, taxon.id));
-        let tag_by_id = index_by_id(&tags, |taxon| taxon.id);
-        let tag_by_slug = index_by_slug(&tags, |taxon| (&taxon.slug, taxon.id));
-        let author_by_id = index_by_id(&authors, |author| author.id);
-        let author_by_slug = index_by_slug(&authors, |author| (&author.slug, author.id));
         Self {
+            company_haystacks: companies
+                .iter()
+                .map(|company| haystack(&company.name, &company.industry))
+                .collect(),
+            category_by_slug: slug_index(categories.iter().map(|view| &view.taxon)),
+            tag_by_slug: slug_index(tags.iter().map(|view| &view.taxon)),
+            author_by_slug: slug_index(authors.iter().map(|view| &view.author)),
             categories,
             tags,
             authors,
             companies,
-            category_by_id,
-            category_by_slug,
-            tag_by_id,
-            tag_by_slug,
-            author_by_id,
-            author_by_slug,
         }
     }
 
-    pub fn category(&self, id: u32) -> Option<&Taxon> {
-        self.category_by_id
-            .get(&id)
-            .and_then(|index| self.categories.get(*index))
+    pub fn category(&self, id: u32) -> Option<&TaxonomyView> {
+        self.categories.get(id.checked_sub(1)? as usize)
     }
 
-    pub fn tag(&self, id: u32) -> Option<&Taxon> {
-        self.tag_by_id
-            .get(&id)
-            .and_then(|index| self.tags.get(*index))
+    pub fn tag(&self, id: u32) -> Option<&TaxonomyView> {
+        self.tags.get(id.checked_sub(1)? as usize)
     }
 
-    pub fn author(&self, id: u32) -> Option<&Author> {
-        self.author_by_id
-            .get(&id)
-            .and_then(|index| self.authors.get(*index))
+    pub fn author(&self, id: u32) -> Option<&AuthorView> {
+        self.authors.get(id.checked_sub(1)? as usize)
     }
 
-    pub fn category_id(&self, slug: &str) -> Option<u32> {
-        self.category_by_slug.get(slug).copied()
-    }
-
-    pub fn tag_id(&self, slug: &str) -> Option<u32> {
-        self.tag_by_slug.get(slug).copied()
-    }
-
-    pub fn author_id(&self, slug: &str) -> Option<u32> {
-        self.author_by_slug.get(slug).copied()
+    /// Resolves a raw article into its stored form once, so every later read is
+    /// a clone of a finished projection.
+    pub fn assemble(&self, raw: RawArticle) -> Article {
+        let input = raw.input;
+        Article {
+            haystack: haystack(&input.title, &input.excerpt),
+            summary: ArticleSummary {
+                id: raw.id,
+                slug: input.slug,
+                title: input.title,
+                excerpt: input.excerpt,
+                lang: input.lang,
+                published_at: raw.published_at,
+                reading_minutes: raw.reading_minutes,
+                views: raw.views,
+                category: reference(self.category(input.category_id).map(|it| &it.taxon)),
+                author: reference(self.author(input.author_id).map(|it| &it.author)),
+                tags: input
+                    .tag_ids
+                    .iter()
+                    .filter_map(|id| self.tag(*id))
+                    .map(|tag| tag.taxon.clone())
+                    .collect(),
+                cover_url: raw.cover_url,
+            },
+            body: input.body,
+            updated_at: raw.updated_at,
+        }
     }
 }
 
-/// Articles in ascending display order: the *last* entry is the newest, so a
-/// listing iterates in reverse and an insert is a push rather than a shift of
-/// a thousand elements per bulk item.
+fn slug_index<'a>(refs: impl Iterator<Item = &'a Ref>) -> HashMap<String, u32> {
+    refs.map(|item| (item.slug.clone(), item.id)).collect()
+}
+
+fn reference(found: Option<&Ref>) -> Ref {
+    found.cloned().unwrap_or_default()
+}
+
+/// Articles in the contract's listing order, shared as `Arc` so the id and slug
+/// indexes cost a refcount rather than a second copy.
 pub struct Articles {
-    ordered: Vec<Arc<Article>>,
-    by_slug: HashMap<String, usize>,
-    by_id: HashMap<u32, usize>,
+    /// The contract's listing order; every read path iterates this.
+    pub ordered: Vec<Arc<Article>>,
+    pub by_slug: HashMap<String, Arc<Article>>,
+    pub by_id: HashMap<u32, Arc<Article>>,
     next_id: u32,
 }
 
 impl Articles {
-    fn new(mut seeded: Vec<Article>) -> Self {
-        let next_id = seeded.iter().map(|article| article.id).max().unwrap_or(0) + 1;
-        seeded.reverse();
-        let ordered: Vec<Arc<Article>> = seeded.into_iter().map(Arc::new).collect();
+    /// The seed is already in listing order, so it is adopted as-is.
+    fn new(ordered: Vec<Arc<Article>>) -> Self {
         let mut by_slug = HashMap::with_capacity(ordered.len());
         let mut by_id = HashMap::with_capacity(ordered.len());
-        for (index, article) in ordered.iter().enumerate() {
-            by_slug.insert(article.slug.clone(), index);
-            by_id.insert(article.id, index);
+        let mut next_id = 1;
+        for article in &ordered {
+            by_slug.insert(article.summary.slug.clone(), Arc::clone(article));
+            by_id.insert(article.summary.id, Arc::clone(article));
+            next_id = next_id.max(article.summary.id + 1);
         }
         Self {
             ordered,
@@ -167,32 +184,6 @@ impl Articles {
             by_id,
             next_id,
         }
-    }
-
-    /// Ascending order; callers that want the contract's default ordering
-    /// iterate this in reverse.
-    pub fn ascending(&self) -> &[Arc<Article>] {
-        &self.ordered
-    }
-
-    pub fn len(&self) -> usize {
-        self.ordered.len()
-    }
-
-    pub fn newest(&self) -> Option<&Arc<Article>> {
-        self.ordered.last()
-    }
-
-    pub fn by_slug(&self, slug: &str) -> Option<&Arc<Article>> {
-        self.by_slug
-            .get(slug)
-            .and_then(|index| self.ordered.get(*index))
-    }
-
-    pub fn by_id(&self, id: u32) -> Option<&Arc<Article>> {
-        self.by_id
-            .get(&id)
-            .and_then(|index| self.ordered.get(*index))
     }
 
     pub fn contains_slug(&self, slug: &str) -> bool {
@@ -206,57 +197,36 @@ impl Articles {
     }
 
     pub fn insert(&mut self, article: Article) -> Arc<Article> {
-        let index = self.ordered.len();
-        self.by_slug.insert(article.slug.clone(), index);
-        self.by_id.insert(article.id, index);
         let article = Arc::new(article);
-        self.ordered.push(Arc::clone(&article));
+        self.by_slug
+            .insert(article.summary.slug.clone(), Arc::clone(&article));
+        self.by_id.insert(article.summary.id, Arc::clone(&article));
+        let at = self
+            .ordered
+            .partition_point(|other| other.order_key() > article.order_key());
+        self.ordered.insert(at, Arc::clone(&article));
         article
     }
 
-    /// Replaces an article in place, keeping its position in the listing.
+    /// Replaces an article, re-sorting it if publishing changed its position.
     pub fn replace(&mut self, previous_slug: &str, article: Article) -> Arc<Article> {
-        let index = self.by_id.get(&article.id).copied().unwrap_or_default();
-        if previous_slug != article.slug {
-            self.by_slug.remove(previous_slug);
-            self.by_slug.insert(article.slug.clone(), index);
-        }
-        let article = Arc::new(article);
-        self.ordered[index] = Arc::clone(&article);
-        article
+        let id = article.summary.id;
+        self.by_slug.remove(previous_slug);
+        self.ordered.retain(|other| other.summary.id != id);
+        self.insert(article)
     }
 
     pub fn remove(&mut self, id: u32) -> bool {
-        let Some(index) = self.by_id.remove(&id) else {
+        let Some(article) = self.by_id.remove(&id) else {
             return false;
         };
-        let removed = self.ordered.remove(index);
-        self.by_slug.remove(&removed.slug);
-        for position in self.by_slug.values_mut() {
-            if *position > index {
-                *position -= 1;
-            }
-        }
-        for position in self.by_id.values_mut() {
-            if *position > index {
-                *position -= 1;
-            }
-        }
+        self.by_slug.remove(&article.summary.slug);
+        self.ordered.retain(|other| other.summary.id != id);
         true
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct IngestRun {
-    pub id: u64,
-    pub source: String,
-    pub started_at: String,
-    pub finished_at: String,
-    pub found: u32,
-    pub ingested: u32,
-    pub errors: u32,
-}
-
+#[derive(Default)]
 pub struct Runs {
     stored: Vec<IngestRun>,
     next_id: u64,
@@ -264,8 +234,8 @@ pub struct Runs {
 
 impl Runs {
     pub fn record(&mut self, mut run: IngestRun) -> IngestRun {
-        run.id = self.next_id;
         self.next_id += 1;
+        run.id = self.next_id;
         self.stored.push(run.clone());
         run
     }
@@ -294,24 +264,24 @@ impl AppState {
     pub fn load() -> std::io::Result<Self> {
         let path = seed_path();
         let bytes = std::fs::read(&path).map_err(|error| {
-            std::io::Error::new(
-                error.kind(),
-                format!(
-                    "could not read the seed corpus at {}: {error}",
-                    path.display()
-                ),
-            )
+            std::io::Error::other(format!(
+                "cannot read the seed at {}: {error}",
+                path.display()
+            ))
         })?;
         let seed: Seed = serde_json::from_slice(&bytes)
             .map_err(|error| std::io::Error::other(format!("seed corpus is not valid: {error}")))?;
+        let corpus = Corpus::new(seed.categories, seed.tags, seed.authors, seed.companies);
+        let ordered = seed
+            .articles
+            .into_iter()
+            .map(|raw| Arc::new(corpus.assemble(raw)))
+            .collect();
         Ok(Self(Arc::new(Inner {
             started: Instant::now(),
-            corpus: Corpus::new(seed.categories, seed.tags, seed.authors, seed.companies),
-            articles: RwLock::new(Articles::new(seed.articles)),
-            runs: RwLock::new(Runs {
-                stored: Vec::new(),
-                next_id: 1,
-            }),
+            corpus,
+            articles: RwLock::new(Articles::new(ordered)),
+            runs: RwLock::new(Runs::default()),
         })))
     }
 
@@ -327,22 +297,4 @@ fn seed_path() -> PathBuf {
         return PathBuf::from(configured);
     }
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/seed.json")
-}
-
-fn index_by_id<T>(items: &[T], id: impl Fn(&T) -> u32) -> HashMap<u32, usize> {
-    items
-        .iter()
-        .enumerate()
-        .map(|(index, item)| (id(item), index))
-        .collect()
-}
-
-fn index_by_slug<T>(items: &[T], key: impl Fn(&T) -> (&String, u32)) -> HashMap<String, u32> {
-    items
-        .iter()
-        .map(|item| {
-            let (slug, id) = key(item);
-            (slug.clone(), id)
-        })
-        .collect()
 }

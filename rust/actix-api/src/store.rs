@@ -28,6 +28,11 @@ pub struct Article {
     pub author_id: u32,
     pub tag_ids: Vec<u32>,
     pub cover_url: String,
+    /// Lower-cased `title + excerpt`, built once at load so `?q=` and `/search`
+    /// do not lower-case a thousand strings on every request. Not part of the
+    /// contract's wire shape.
+    #[serde(skip)]
+    pub haystack: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -63,6 +68,9 @@ pub struct Company {
     pub employees: u32,
     pub total_funding_usd: u64,
     pub website: String,
+    /// Lower-cased `name + industry`, the two fields `/search` matches on.
+    #[serde(skip)]
+    pub haystack: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -110,6 +118,12 @@ pub struct Store {
     next_run_id: u64,
 }
 
+/// The lower-cased text `?q=` and `/search` scan. Built at load and refreshed on
+/// write, never per request.
+pub fn haystack(first: &str, second: &str) -> String {
+    format!("{first} {second}").to_lowercase()
+}
+
 /// Descending sort key. `Some(..)` outranks `None` so drafts land at the end.
 fn order_key(article: &Article) -> (bool, &str, u64) {
     (article.published_at.is_some(), article.published_at.as_deref().unwrap_or(""), article.id)
@@ -118,8 +132,15 @@ fn order_key(article: &Article) -> (bool, &str, u64) {
 impl Store {
     pub fn load(path: &Path) -> std::io::Result<Self> {
         let raw = std::fs::read(path)?;
-        let seed: Seed = serde_json::from_slice(&raw)
+        let mut seed: Seed = serde_json::from_slice(&raw)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+
+        for article in &mut seed.articles {
+            article.haystack = haystack(&article.title, &article.excerpt);
+        }
+        for company in &mut seed.companies {
+            company.haystack = haystack(&company.name, &company.industry);
+        }
 
         let category_by_id = seed.categories.iter().enumerate().map(|(i, c)| (c.id, i)).collect();
         let category_by_slug =

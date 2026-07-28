@@ -1,0 +1,32 @@
+host CPU before the run: avg 22.3%  min 19.1%  max 24.7%
+blazingly  upload  round 1         405 rps  p50 60.553ms   p99 123.218ms  cpu  373%  rss  300.8 MiB  host 19.8%
+axum       upload  round 1         520 rps  p50 48.520ms   p99 91.709ms   cpu  366%  rss   65.8 MiB  host 18.8%
+actix      upload  round 1         446 rps  p50 53.660ms   p99 112.234ms  cpu  349%  rss   47.3 MiB  host 19.9%
+tokio      upload  round 1         522 rps  p50 47.649ms   p99 93.260ms   cpu  371%  rss   76.2 MiB  host 25.7%
+fastapi    upload  round 1          74 rps  p50 290.680ms  p99 510.855ms  cpu  527%  rss  343.9 MiB  host 19.8%
+blazingly  upload  round 2         367 rps  p50 64.640ms   p99 134.278ms  cpu  366%  rss  300.2 MiB  host 18.2%
+axum       upload  round 2         516 rps  p50 48.488ms   p99 94.529ms   cpu  367%  rss   67.3 MiB  host 19.3%
+actix      upload  round 2         507 rps  p50 49.571ms   p99 69.768ms   cpu  373%  rss   47.5 MiB  host 20.4%
+tokio      upload  round 2         523 rps  p50 48.320ms   p99 91.068ms   cpu  371%  rss   75.5 MiB  host 22.6%
+fastapi    upload  round 2          76 rps  p50 376.543ms  p99 446.281ms  cpu  538%  rss  346.0 MiB  host 19.5%
+blazingly  upload  round 3         371 rps  p50 64.505ms   p99 136.426ms  cpu  366%  rss  300.4 MiB  host 21.2%
+axum       upload  round 3         515 rps  p50 48.842ms   p99 91.923ms   cpu  368%  rss   65.0 MiB  host 19.7%
+actix      upload  round 3         501 rps  p50 49.742ms   p99 73.353ms   cpu  373%  rss   47.8 MiB  host 19.8%
+tokio      upload  round 3         514 rps  p50 48.452ms   p99 91.666ms   cpu  376%  rss   77.1 MiB  host 17%
+WARNING: fastapi/upload round 3 discarded: 11 connection errors, 0 status mismatches
+API comparison: 32 connections, 8s per sample, 2s warmup, 3 rounds, 4 workers
+
+host background CPU before: avg 22.3%  min 19.1%  max 24.7%
+host background CPU after:  avg 19.4%  min 15.1%  max 25.1%
+
+scenario: upload
+  blazingly  median        371 rps   range        367 - 405        spread 1.10x  p50 64.505ms   p99 136.426ms  cpu  366%  peak RSS  300.4 MiB  host 18-21%  n=3
+  axum       median        516 rps   range        515 - 520        spread 1.01x  p50 48.488ms   p99 94.529ms   cpu  367%  peak RSS   67.3 MiB  host 19-20%  n=3
+  actix      median        501 rps   range        446 - 507        spread 1.14x  p50 49.742ms   p99 73.353ms   cpu  373%  peak RSS   47.8 MiB  host 20-20%  n=3
+  tokio      median        522 rps   range        514 - 523        spread 1.02x  p50 47.649ms   p99 93.260ms   cpu  371%  peak RSS   76.2 MiB  host 17-26%  n=3
+  fastapi    median         76 rps   range         74 - 76         spread 1.02x  p50 376.543ms  p99 446.281ms  cpu  538%  peak RSS  346.0 MiB  host 20-20%  n=2
+
+discarded samples (excluded from every median above):
+  fastapi    upload  round 3  connection errors  errors=11 mismatches=0
+
+wrote C:\Users\SergiiZiborov\Documents\GitHub\MyProjects\blazingly-apibench\results\20260729-022650-summary.txt

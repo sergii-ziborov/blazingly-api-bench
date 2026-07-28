@@ -6,20 +6,28 @@
 //! that must resolve) cannot be declared and live in the handlers.
 
 use blazingly::prelude::*;
-use blazingly::{ValidationErrors, validation::ModelViolation};
+use blazingly::{
+    ApiSchema, FieldDescriptor, ModelDescriptor, ValidationErrors, validation::ModelViolation,
+};
 
 // ---------------------------------------------------------------------------
 // Shared views
 // ---------------------------------------------------------------------------
 
+/// The `{id, slug, name}` shape every nested reference uses.
 #[api_model]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Ref {
     pub id: u32,
     pub slug: String,
     pub name: String,
 }
 
+/// The public projection of an article.
+///
+/// The store keeps one of these per article with its category, author and tag
+/// references already resolved, so a listing clones a prepared value instead of
+/// re-deriving one per item per request.
 #[api_model]
 #[derive(Clone, Debug)]
 pub struct ArticleSummary {
@@ -37,77 +45,46 @@ pub struct ArticleSummary {
     pub cover_url: String,
 }
 
-// `#[api_model]` has no flattening or composition, so a detail view restates
-// every summary field instead of embedding one.
+/// The detail view is the summary plus three fields.
+///
+/// `#[api_model]` has no composition, so `#[serde(flatten)]` is what inlines
+/// the summary on the wire. It costs a generated `ModelDescriptor` that
+/// describes a nested `summary` object the response never contains.
 #[api_model]
 #[derive(Clone, Debug)]
 pub struct ArticleDetail {
-    pub id: u32,
-    pub slug: String,
-    pub title: String,
-    pub excerpt: String,
-    pub lang: String,
-    pub published_at: Option<String>,
-    pub reading_minutes: u32,
-    pub views: u64,
-    pub category: Ref,
-    pub author: Ref,
-    pub tags: Vec<Ref>,
-    pub cover_url: String,
+    #[serde(flatten)]
+    pub summary: ArticleSummary,
     pub body: String,
     pub updated_at: String,
     pub related: Vec<ArticleSummary>,
 }
 
-impl ArticleDetail {
-    pub fn new(
-        summary: ArticleSummary,
-        body: String,
-        updated_at: String,
-        related: Vec<ArticleSummary>,
-    ) -> Self {
-        Self {
-            id: summary.id,
-            slug: summary.slug,
-            title: summary.title,
-            excerpt: summary.excerpt,
-            lang: summary.lang,
-            published_at: summary.published_at,
-            reading_minutes: summary.reading_minutes,
-            views: summary.views,
-            category: summary.category,
-            author: summary.author,
-            tags: summary.tags,
-            cover_url: summary.cover_url,
-            body,
-            updated_at,
-            related,
-        }
-    }
-}
-
+/// Also the seed shape for categories and tags; the count is filled per request.
 #[api_model]
 #[derive(Clone, Debug)]
 pub struct TaxonomyView {
-    pub id: u32,
-    pub slug: String,
-    pub name: String,
+    #[serde(flatten)]
+    pub taxon: Ref,
+    #[serde(default)]
     pub article_count: usize,
 }
 
+/// Also the seed shape for authors.
 #[api_model]
 #[derive(Clone, Debug)]
 pub struct AuthorView {
-    pub id: u32,
-    pub slug: String,
-    pub name: String,
+    #[serde(flatten)]
+    pub author: Ref,
     pub bio: String,
+    #[serde(default)]
     pub article_count: usize,
 }
 
+/// Both the seed shape and the response shape; companies are never derived.
 #[api_model]
 #[derive(Clone, Debug)]
-pub struct CompanyView {
+pub struct Company {
     pub id: u32,
     pub slug: String,
     pub name: String,
@@ -134,7 +111,7 @@ pub struct ArticlePage {
 #[api_model]
 #[derive(Clone, Debug)]
 pub struct CompanyPage {
-    pub items: Vec<CompanyView>,
+    pub items: Vec<Company>,
     pub page: u32,
     pub limit: u32,
     pub total: usize,
@@ -146,7 +123,7 @@ pub struct CompanyPage {
 pub struct SearchResult {
     pub query: String,
     pub articles: Vec<ArticleSummary>,
-    pub companies: Vec<CompanyView>,
+    pub companies: Vec<Company>,
 }
 
 #[api_model]
@@ -164,6 +141,49 @@ pub struct CoverView {
     pub cover_url: String,
     pub bytes: usize,
     pub content_type: String,
+}
+
+// ---------------------------------------------------------------------------
+// Borrowed response views
+// ---------------------------------------------------------------------------
+//
+// What the hot read paths actually put on the wire. The store already holds a
+// finished `ArticleSummary` and `Company` per row, so a listing has nothing left
+// to build: it borrows the rows and encodes them while it still holds the read
+// guard, instead of cloning two hundred strings into an owned mirror that lives
+// for the few microseconds until the body is written.
+//
+// `#[api_model]` cannot express a lifetime, so these are plain `Serialize`
+// structs and the owned models above stay the documented schema — the operations
+// still declare `ArticlePage`, `ArticleDetail`, `CompanyPage` and `SearchResult`
+// through `PreparedJson<T>`, so OpenAPI and MCP are unchanged. Field for field
+// each view mirrors its owned counterpart, so the bytes are the same too.
+
+#[derive(serde::Serialize)]
+pub struct PageView<'store, T> {
+    pub items: Vec<&'store T>,
+    pub page: u32,
+    pub limit: u32,
+    pub total: usize,
+    pub pages: usize,
+}
+
+#[derive(serde::Serialize)]
+pub struct DetailView<'store> {
+    #[serde(flatten)]
+    pub summary: &'store ArticleSummary,
+    pub body: &'store str,
+    pub updated_at: &'store str,
+    pub related: Vec<&'store ArticleSummary>,
+}
+
+/// The echoed query borrows the request rather than the store; both outlive the
+/// encode.
+#[derive(serde::Serialize)]
+pub struct SearchView<'store> {
+    pub query: &'store str,
+    pub articles: Vec<&'store ArticleSummary>,
+    pub companies: Vec<&'store Company>,
 }
 
 // ---------------------------------------------------------------------------
@@ -197,18 +217,6 @@ pub struct CompanyQuery {
     pub industry: Option<String>,
     pub stage: Option<String>,
     pub min_funding: Option<i64>,
-}
-
-/// `Header<String>` derives the header name from the argument identifier and
-/// maps `_` to `-`. The native *streaming* request view compares the raw name
-/// instead, so an operation that also takes `UploadBody` never sees
-/// `content-type` through a scalar `Header<String>`. A one-field model with an
-/// explicit alias restores it, because the model path does consult aliases.
-#[api_model]
-#[derive(Clone, Debug)]
-pub struct UploadHeaders {
-    #[alias("content-type")]
-    pub content_type: Option<String>,
 }
 
 #[api_model]
@@ -301,47 +309,36 @@ pub fn within_one_year(value: &DateTime) -> Result<(), ValidationErrors> {
 // Ingestion
 // ---------------------------------------------------------------------------
 
-/// The bulk item deliberately carries no declarative rules.
+/// The bulk envelope carries `CreateArticle` items and implements `ApiModel` by
+/// hand.
 ///
-/// `#[api_model]` validates a `Vec<Model>` field automatically and there is no
-/// way to opt out, so declaring `items: Vec<CreateArticle>` would fail the
-/// whole envelope with 422 the moment one item was invalid — the opposite of
-/// what this endpoint has to do. The items are converted and validated one at
-/// a time in the handler instead.
-#[api_model]
-#[derive(Clone, Debug)]
-pub struct BulkItem {
-    pub title: String,
-    pub slug: String,
-    pub excerpt: String,
-    pub body: String,
-    pub lang: String,
-    pub category_id: u32,
-    pub author_id: u32,
-    pub tag_ids: Vec<u32>,
-}
-
-impl From<BulkItem> for CreateArticle {
-    fn from(item: BulkItem) -> Self {
-        Self {
-            title: item.title,
-            slug: item.slug,
-            excerpt: item.excerpt,
-            body: item.body,
-            lang: item.lang,
-            category_id: item.category_id,
-            author_id: item.author_id,
-            tag_ids: item.tag_ids,
-        }
-    }
-}
-
-#[api_model]
-#[derive(Clone, Debug)]
+/// `#[api_model]` validates a `Vec<Model>` field automatically with no way to
+/// opt out, so declaring `items: Vec<CreateArticle>` under the attribute would
+/// fail the whole envelope with 422 the moment one item was invalid — the
+/// opposite of what this endpoint has to do. Twelve hand-written lines buy back
+/// per-item reporting; the alternative is a duplicate rule-free item struct and
+/// a `From` impl that copies eight fields.
+#[derive(Debug, serde::Deserialize)]
 pub struct BulkRequest {
-    #[min_items(1)]
-    #[max_items(100)]
-    pub items: Vec<BulkItem>,
+    pub items: Vec<CreateArticle>,
+}
+
+impl ApiModel for BulkRequest {
+    fn model_descriptor() -> ModelDescriptor {
+        ModelDescriptor::new(
+            "BulkRequest",
+            vec![FieldDescriptor::new(
+                "items",
+                true,
+                <Vec<CreateArticle> as ApiSchema>::type_descriptor(),
+                Vec::new(),
+            )],
+        )
+    }
+
+    fn validate(&self) -> Result<(), ValidationErrors> {
+        Ok(())
+    }
 }
 
 #[api_model]
@@ -373,20 +370,31 @@ pub struct BulkReport {
     pub results: Vec<BulkOutcome>,
 }
 
+/// One scrape run: the request body, the stored row and the response.
+///
+/// `DateTime` serializes through `Display`, which for `time::OffsetDateTime` is
+/// `2026-04-01 12:00:00.0 +00:00:00` rather than RFC 3339, so both timestamps
+/// carry an explicit serializer. Without it this endpoint would need a second
+/// string-typed model and a field-by-field copy.
 #[api_model(validate_with = finished_after_started)]
 #[derive(Clone, Debug)]
-pub struct IngestRunRequest {
+pub struct IngestRun {
+    /// Assigned by the store; a client cannot supply one.
+    #[serde(default, skip_deserializing)]
+    pub id: u64,
     #[min_length(1)]
     #[max_length(200)]
     pub source: String,
+    #[serde(serialize_with = "as_rfc3339")]
     pub started_at: DateTime,
+    #[serde(serialize_with = "as_rfc3339")]
     pub finished_at: DateTime,
     pub found: u32,
     pub ingested: u32,
     pub errors: u32,
 }
 
-pub fn finished_after_started(run: &IngestRunRequest) -> Result<(), ModelViolation> {
+pub fn finished_after_started(run: &IngestRun) -> Result<(), ModelViolation> {
     if run.finished_at.as_inner() < run.started_at.as_inner() {
         return Err(ModelViolation::field(
             "finished_at",
@@ -397,27 +405,13 @@ pub fn finished_after_started(run: &IngestRunRequest) -> Result<(), ModelViolati
     Ok(())
 }
 
-#[api_model]
-#[derive(Clone, Debug)]
-pub struct IngestRunView {
-    pub id: u64,
-    pub source: String,
-    pub started_at: String,
-    pub finished_at: String,
-    pub found: u32,
-    pub ingested: u32,
-    pub errors: u32,
+fn as_rfc3339<S: serde::Serializer>(value: &DateTime, serializer: S) -> Result<S::Ok, S::Error> {
+    serializer.serialize_str(&crate::api::rfc3339(value.as_inner()))
 }
 
 // ---------------------------------------------------------------------------
 // Domain errors
 // ---------------------------------------------------------------------------
-
-#[api_model]
-#[derive(Clone, Debug)]
-pub struct ViolationDetails {
-    pub violations: Vec<Violation>,
-}
 
 #[api_error]
 #[derive(Clone, Debug)]
@@ -445,24 +439,14 @@ pub enum ApiError {
     #[status(422)]
     #[code("validation_error")]
     #[message("The request failed validation.")]
-    Invalid(ViolationDetails),
-}
-
-impl ApiError {
-    pub fn invalid(violations: Vec<Violation>) -> Self {
-        Self::Invalid(ViolationDetails { violations })
-    }
+    Invalid(Vec<Violation>),
 }
 
 impl Violation {
-    pub fn new(
-        field: impl Into<String>,
-        code: impl Into<String>,
-        message: impl Into<String>,
-    ) -> Self {
+    pub fn new(field: &str, code: &str, message: impl Into<String>) -> Self {
         Self {
-            field: field.into(),
-            code: code.into(),
+            field: field.to_owned(),
+            code: code.to_owned(),
             message: message.into(),
         }
     }
@@ -474,12 +458,6 @@ pub fn violations_of(errors: &ValidationErrors) -> Vec<Violation> {
     errors
         .violations()
         .iter()
-        .map(|violation| {
-            Violation::new(
-                violation.field.clone(),
-                violation.code.clone(),
-                violation.message.clone(),
-            )
-        })
+        .map(|found| Violation::new(&found.field, &found.code, found.message.clone()))
         .collect()
 }

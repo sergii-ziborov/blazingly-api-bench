@@ -47,9 +47,10 @@ fn check_lang(lang: Option<&str>) -> Result<(), ApiError> {
     }
 }
 
+/// `needle` must already be lower-cased; `haystack` is the lower-cased
+/// `title + excerpt` built once at load.
 fn matches_text(article: &Article, needle: &str) -> bool {
-    article.title.to_lowercase().contains(needle)
-        || article.excerpt.to_lowercase().contains(needle)
+    article.haystack.contains(needle)
 }
 
 #[get("/articles")]
@@ -219,14 +220,12 @@ async fn search(
         .map(|article| dto::summary(&store, article))
         .collect();
 
+    // Name and industry only. `slug` used to be matched here as well, which no
+    // other implementation does and SPEC.md does not ask for.
     let companies = store
         .companies
         .iter()
-        .filter(|company| {
-            company.name.to_lowercase().contains(&needle)
-                || company.slug.contains(&needle)
-                || company.industry.contains(&needle)
-        })
+        .filter(|company| company.haystack.contains(&needle))
         .take(10)
         .collect();
 

@@ -1,5 +1,5 @@
 ﻿[workspace]
-members = ["blazingly-api", "axum-api", "actix-api", "loadgen"]
+members = ["blazingly-api", "axum-api", "actix-api", "tokio-api", "loadgen"]
 resolver = "3"
 
 [workspace.package]
