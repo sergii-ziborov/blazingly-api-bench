@@ -99,6 +99,16 @@ This supersedes the 2026-07-28 run, which was taken at 85% background load and
 before two framework fixes landed in `blazingly` (pattern matching, and keeping
 uploads out of the JSON document).
 
+**The `upload` rows were re-measured on 2026-07-29 after `blazingly-api`'s cover
+handler was rewritten to stream**, at 8 and 32 connections, five rounds each,
+interleaved, gate green at 120/120 both times. Write-up in
+[`results/20260729-094851-analysis.md`](results/20260729-094851-analysis.md).
+That pair was taken at **85.6% background CPU**, which is four times the
+threshold this suite treats as reportable, so it re-measures the memory column
+and leaves the throughput column unmeasured. The four implementations that did
+not change reproduced their earlier peak RSS to within 5% while their throughput
+fell two- to four-fold, which is what separates the two columns.
+
 ### The host was quieter than last time, but still not idle
 
 | | avg | min | max |
@@ -114,6 +124,11 @@ scenario five times produced spreads of **1.33x to 2.04x**, against 1.27x–4.18
 before. More survives — but the band is still wider than every read-scenario
 difference.
 
+These figures are the 64-connection matrix only. The two `upload` re-runs were
+taken later the same day at **85.6% before / 85.9% after**, on a host carrying
+unrelated interactive load, with spreads up to 10.83x. Do not read the 31.3%
+above onto the `upload` rows.
+
 ### Medians (true median of 5 rounds, requests/sec) with observed range
 
 | scenario | blazingly | axum | actix | tokio | fastapi |
@@ -123,11 +138,22 @@ difference.
 | **filter** | 22,138 <br><sub>16.4k–25.4k</sub> | 19,155 <br><sub>13.2k–21.5k</sub> | 20,789 <br><sub>14.3k–24.8k</sub> | 15,506 <br><sub>13.9k–22.0k</sub> | 2,742 <br><sub>2.3k–3.4k</sub> |
 | **search** | 27,171 <br><sub>18.6k–28.7k</sub> | 24,261 <br><sub>14.9k–26.1k</sub> | 26,015 <br><sub>14.5k–29.7k</sub> | 25,068 <br><sub>13.2k–26.9k</sub> | 3,094 <br><sub>2.9k–3.6k</sub> |
 | **bulk** | 10,562 <br><sub>8.1k–11.6k</sub> | 9,021 <br><sub>6.0k–9.7k</sub> | 7,050 <br><sub>4.9k–8.3k</sub> | **11,963** <br><sub>8.5k–13.8k</sub> | 1,582 <br><sub>1.3k–2.0k</sub> |
-| **upload** <br><sub>8 conn</sub> | **352** <br><sub>347–378</sub> | 652 <br><sub>630–662</sub> | **669** <br><sub>659–671</sub> | 650 <br><sub>650–658</sub> | 64 <br><sub>58–67</sub> |
+| **upload** <br><sub>8 conn, superseded code</sub> | 352 <br><sub>347–378</sub> | 652 <br><sub>630–662</sub> | 669 <br><sub>659–671</sub> | 650 <br><sub>650–658</sub> | 64 <br><sub>58–67</sub> |
 | **peak RSS** <br><sub>reads + bulk</sub> | 25–29 MiB | 25–27 MiB | 25–27 MiB | **24.5–26 MiB** | **297–303 MiB** |
-| **peak RSS** <br><sub>upload, 8 conn</sub> | **106.6 MiB** | 33.5 MiB | **32.2 MiB** | 36.0 MiB | 315.0 MiB |
+| **peak RSS** <br><sub>upload, 8 conn</sub> | **25.9 MiB** | 34.4 MiB | 33.9 MiB | 36.6 MiB | 321.4 MiB |
+| **peak RSS** <br><sub>upload, 32 conn</sub> | **25.9 MiB** | 66.0 MiB | 49.1 MiB | 76.5 MiB | 352.9 MiB |
 
-`n=5` everywhere except FastAPI on `search` (`n=3`) and `upload` (`n=4`).
+`n=5` everywhere except FastAPI on `search` (`n=3`), and on `upload` where four
+of five samples were lost at 8 connections (`n=1`) and one at 32 (`n=4`); actix
+also lost one at 32 (`n=4`). All losses were connection errors, none were status
+mismatches.
+
+The `upload` throughput row is kept because it is the last measurement taken on
+a quiet host, but for `blazingly` it measures **code that no longer exists** —
+the buffered `File<UploadFile>` handler the streaming one replaced. Post-rewrite
+upload throughput has not been measured on a host quiet enough to report.
+The two `peak RSS` upload rows are from the post-rewrite runs, all five
+implementations re-measured together.
 
 ### What these numbers support, and what they do not
 
@@ -138,7 +164,9 @@ difference.
 | filter | 1.43x | 1.55x – 1.73x | **inside the noise** |
 | search | 1.12x | 1.54x – 2.04x | **inside the noise** |
 | **bulk** | **1.70x** | 1.43x – 1.69x | **real** — tokio over actix, no overlap |
-| **upload** | **1.90x** | 1.01x – 1.09x | **real** — actix over blazingly, no overlap |
+| **upload** <br><sub>throughput, superseded code</sub> | **1.90x** | 1.01x – 1.09x | was **real** — actix over blazingly, no overlap — against the buffered handler since replaced |
+| **upload** <br><sub>throughput, current code</sub> | 1.89x @ 8c, 1.94x @ 32c | 1.75x – 4.42x, 1.25x – 10.83x | **inside the noise** — unmeasured on this host |
+| **upload** <br><sub>peak RSS, current code</sub> | **1.41x @ 8c, 2.95x @ 32c** | 1.00x – 1.05x | **real** — blazingly lowest of five, no sample overlap; 1.31x / 1.90x clear of the next-lowest |
 
 Nothing is called real unless the leader's *worst* sample still beats the
 trailer's *best*. With five rounds the true median is a single sample, so the
@@ -160,12 +188,22 @@ occur here.
 - **Bare `tokio` is fastest on bulk** — its worst sample (8,495) beats actix's
   best (8,328). Against blazingly and axum the ranges overlap, so those are
   directional only.
-- **`blazingly` is materially behind on uploads**: 1.85x–1.90x lower throughput
-  and 3.0x–6.3x higher peak RSS than axum/actix/tokio, non-overlapping at both 8
-  and 32 connections, with the tightest spreads in the suite. It holds ~2 copies
-  of every in-flight body where the other three stream and hold a fraction of
-  one — `File<UploadFile>` buffers the whole part, and the framework offers no
-  streaming multipart extractor.
+- **`blazingly`'s upload memory no longer scales with in-flight requests.** Its
+  cover handler now reads the body as a stream, counting and dropping each chunk
+  rather than receiving the whole part materialized. Peak RSS is **25.9 MiB at
+  both 8 and 32 connections — 1.00x across a fourfold rise in concurrency**, with
+  all ten samples inside 25.8–26.1 MiB. Against the buffered handler measured by
+  this same harness that is 106.6 → 25.9 MiB at 8 connections (4.1x) and
+  300.4 → 25.9 MiB at 32 (11.6x), where the buffered one had grown 2.82x between
+  the two counts.
+- **It is now the lowest peak RSS of the five on this scenario, at both
+  connection counts**, and the only one that does not move with concurrency:
+  25.9 MiB against actix 33.9 / axum 34.4 / tokio 36.6 at 8 connections, and
+  against actix 49.1 / axum 66.0 / tokio 76.5 at 32. No sample overlap in either
+  direction — its worst sample beats every other implementation's best. The gap
+  widens with concurrency because theirs grows and its does not. The other three
+  were never buffering the whole body either; what changed is the working set
+  held per in-flight upload.
 
 **Not supported — still do not read a ranking into the read scenarios:**
 
@@ -179,10 +217,20 @@ highest median on three of the four read scenarios.** That is a change from the
 previous run and a reason to re-run on an idle machine. It is not a result.
 
 Also unsupported: that blazingly beats axum or actix on bulk (ranges overlap);
-that actix's low bulk CPU (209%) means anything yet; and **whether the multipart
-fix improved uploads** — the harness had no upload scenario before, so there is
-no pre-fix measurement to compare against. The upload numbers establish where
-blazingly stands, not how far it moved.
+and that actix's low bulk CPU (209%) means anything yet.
+
+**And unsupported on uploads: any throughput comparison at all, post-rewrite.**
+Both re-runs land inside the noise band — one implementation measured five times
+disagreed with itself by up to 10.83x, more than any two implementations
+disagreed with each other. The streaming rewrite may have helped upload
+throughput, hurt it, or left it alone; this run cannot tell, and the drop in the
+numbers is fully consistent with a host at 85.6% background CPU against the
+20.5% the pre-change run enjoyed. What the last quiet-host measurement showed is
+that the *buffered* handler was genuinely behind — 1.90x at 8 connections, 1.41x
+at 32, non-overlapping. **Whether that gap survived the rewrite is open, and
+needs a re-run on an idle machine.** The memory result above does not depend on
+this, because the four unchanged implementations reproduced their earlier peak
+RSS within 5% on the same loaded host.
 
 ### FastAPI's numbers flatter it
 

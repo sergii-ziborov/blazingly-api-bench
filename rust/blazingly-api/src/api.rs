@@ -1,5 +1,6 @@
 //! Every operation in the contract.
 
+use blazingly::MultipartError;
 use blazingly::prelude::*;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -276,9 +277,20 @@ pub async fn delete_article(Path(id): Path<u32>, state: AppState) -> Result<NoCo
     }
 }
 
-/// `File<UploadFile>` buffers the whole part before the handler runs, which the
-/// contract permits and the peak-RSS column is there to expose. There is no
-/// streaming multipart extractor to reach for instead.
+/// The contract counts the uploaded bytes and discards them, so nothing here has
+/// a reason to hold the upload. `UploadBody::into_multipart` parses the document
+/// while it arrives and hands out chunks borrowed from the reader's own window,
+/// so what stays resident is one transport chunk rather than the whole part —
+/// which is exactly what the peak-RSS column of the upload scenario measures.
+///
+/// `File<UploadFile>`, which this replaced, materialized the part before the
+/// handler started. It is still the right extractor for an upload the handler
+/// has to look at, and every other endpoint here is unchanged.
+///
+/// One consequence of the switch is paid back by hand: an `InputSource::Stream`
+/// body is opaque to the framework's media-type gate, so the 415 the buffered
+/// form produced for a request that was not `multipart/form-data` is restated
+/// below rather than allowed to become a 422.
 #[post(
     "/admin/articles/{id}/cover",
     id = "admin.articles.cover",
@@ -287,24 +299,84 @@ pub async fn delete_article(Path(id): Path<u32>, state: AppState) -> Result<NoCo
 #[security("editorial", scopes = ["editor"])]
 pub async fn upload_cover(
     Path(id): Path<u32>,
-    File(file): File<UploadFile>,
+    body: UploadBody,
     state: AppState,
 ) -> Result<Json<CoverView>, ApiError> {
-    let content_type = file.content_type.unwrap_or_default();
-    if content_type != "image/jpeg" && content_type != "image/png" {
-        return Err(ApiError::UnsupportedCoverType);
+    if !body.content_type().is_some_and(is_multipart_form_data) {
+        return Err(ApiError::NotMultipart);
     }
-    if file.bytes.len() > MAX_COVER_BYTES {
-        return Err(ApiError::CoverTooLarge);
+    let mut multipart = body
+        .into_multipart()
+        .map_err(|error| cover_upload_error(&error))?;
+
+    while let Some(mut field) = multipart
+        .next_field()
+        .await
+        .map_err(|error| cover_upload_error(&error))?
+    {
+        if field.name() != "file" {
+            continue;
+        }
+        let content_type = field.content_type().unwrap_or_default().to_owned();
+        if content_type != "image/jpeg" && content_type != "image/png" {
+            return Err(ApiError::UnsupportedCoverType);
+        }
+
+        // Counted and dropped one chunk at a time. The running total is what
+        // enforces the limit, so an oversized cover is refused without the
+        // handler ever having held it.
+        let mut bytes = 0_usize;
+        while let Some(chunk) = field
+            .next_chunk()
+            .await
+            .map_err(|error| cover_upload_error(&error))?
+        {
+            bytes += chunk.len();
+            if bytes > MAX_COVER_BYTES {
+                return Err(ApiError::CoverTooLarge);
+            }
+        }
+
+        let articles = state.articles.read().unwrap_or_else(|e| e.into_inner());
+        let article = articles.by_id.get(&id).ok_or(ApiError::NotFound)?;
+        return Ok(Json(CoverView {
+            id: article.summary.id,
+            cover_url: article.summary.cover_url.clone(),
+            bytes,
+            content_type,
+        }));
     }
-    let articles = state.articles.read().unwrap_or_else(|e| e.into_inner());
-    let article = articles.by_id.get(&id).ok_or(ApiError::NotFound)?;
-    Ok(Json(CoverView {
-        id: article.summary.id,
-        cover_url: article.summary.cover_url.clone(),
-        bytes: file.bytes.len(),
-        content_type,
-    }))
+
+    Err(ApiError::Invalid(vec![Violation::new(
+        "file",
+        "required",
+        "a multipart part named file is required",
+    )]))
+}
+
+/// The media type the framework checked for `File<UploadFile>` and no longer
+/// checks for a streaming body: the type alone, parameters ignored.
+fn is_multipart_form_data(content_type: &str) -> bool {
+    content_type.split(';').next().is_some_and(|media_type| {
+        media_type
+            .trim()
+            .eq_ignore_ascii_case("multipart/form-data")
+    })
+}
+
+/// Projects a reader failure onto this API's error type.
+///
+/// The statuses are the ones the framework's own `MultipartError` projects to,
+/// so a malformed body is still a 422 and an oversized part still a 413; only
+/// the envelope around them is this crate's.
+fn cover_upload_error(error: &MultipartError) -> ApiError {
+    match error {
+        MultipartError::TooLarge { .. } => ApiError::CoverTooLarge,
+        MultipartError::Transport(_) => ApiError::UploadUnreadable,
+        MultipartError::Malformed(reason) => {
+            ApiError::Invalid(vec![Violation::new("file", "invalid_multipart", *reason)])
+        }
+    }
 }
 
 #[post(

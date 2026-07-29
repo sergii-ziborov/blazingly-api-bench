@@ -436,6 +436,22 @@ pub enum ApiError {
     #[message("A cover image must be image/jpeg or image/png.")]
     UnsupportedCoverType,
 
+    /// The cover endpoint reads a streaming body, which the framework's
+    /// media-type gate deliberately does not inspect, so the handler restates
+    /// the 415 the buffered `File<UploadFile>` extractor used to produce.
+    #[status(415)]
+    #[code("unsupported_media_type")]
+    #[message("A cover upload must be multipart/form-data.")]
+    NotMultipart,
+
+    /// A streamed upload that stopped before its closing delimiter. The
+    /// buffered extractor never saw this: the adapter failed the connection
+    /// before the handler ran.
+    #[status(400)]
+    #[code("upload_stream_failed")]
+    #[message("The upload could not be read to its end.")]
+    UploadUnreadable,
+
     #[status(422)]
     #[code("validation_error")]
     #[message("The request failed validation.")]

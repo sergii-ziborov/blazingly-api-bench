@@ -1,0 +1,19 @@
+﻿host background CPU before: avg 85.6%  min 83.7%  max 87.2%
+host background CPU after: avg 85.9%  min 83.0%  max 87.8%
+
+## upload
+
+impl         n   median rps        min        max  spread        p50        p99   cpu%  peak MiB
+blazingly    5          108         69        176   2.55x  173.236ms  677.404ms    155      25.9
+axum         5          169         46        209   4.54x  140.022ms  318.762ms    174      66.0
+actix        4          172        145        181   1.25x  123.804ms  578.743ms    180      49.1
+tokio        5           89         18        195  10.83x  229.202ms  850.947ms    116      76.5
+fastapi      4           15         10         19   1.90x 1374.782ms 2684.711ms    123     352.9
+
+  rust group: gap 1.94x (actix over tokio), noise band 1.25x-10.83x
+  verdict: INSIDE THE NOISE - unmeasured on this host
+  actix over fastapi: 11.50x, ranges do not overlap
+
+discarded samples (excluded from every figure above):
+  actix      upload  round 5  errors=24 mismatches=0
+  fastapi    upload  round 5  errors=1 mismatches=0

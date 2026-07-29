@@ -146,11 +146,33 @@ function Wait-Ready {
     return $false
 }
 
+# Stopping a server is best effort, but it must not be best effort about
+# whether it worked: a survivor keeps the port and the next sample would then
+# measure a fresh process's memory while the load actually went to the old one.
+#
+# taskkill writes to stderr whenever a member of the tree is already gone --
+# a multicore worker that exited with its parent, a PID enumerated a moment
+# before it died. Under $ErrorActionPreference = "Stop" that write is promoted
+# to a terminating NativeCommandError, which aborts the whole matrix between
+# samples rather than the sample. That is not hypothetical: it ended a five-round
+# run after round 1, with four rounds unmeasured and no discarded-sample record,
+# because the failure happened in `finally` rather than in the measurement.
 function Stop-Server {
     param($Process)
-    if ($Process -and -not $Process.HasExited) {
-        & taskkill.exe /PID $Process.Id /T /F | Out-Null
-        $Process.WaitForExit(10000) | Out-Null
+    if (-not $Process -or $Process.HasExited) { return }
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & taskkill.exe /PID $Process.Id /T /F 2>$null | Out-Null
+    } finally {
+        $ErrorActionPreference = $previousPreference
+    }
+    if (-not $Process.WaitForExit(10000)) {
+        try { $Process.Kill($true) } catch {}
+        $Process.WaitForExit(5000) | Out-Null
+    }
+    if (-not $Process.HasExited) {
+        Write-Warning "server pid $($Process.Id) survived shutdown; the next sample may bind a stale port"
     }
 }
 
@@ -214,6 +236,18 @@ foreach ($round in 1..$Rounds) {
                 $process = Start-Server -Server $server
                 if (-not (Wait-Ready -Server $server)) {
                     Write-Warning "$($server.Name) never became ready; skipping"
+                    continue
+                }
+                # /health answering does not prove it was *this* process that
+                # answered. If the one just started died on a port still held by
+                # a predecessor, the memory column would come from the corpse and
+                # the throughput from the survivor. Discard rather than report.
+                if ($process.HasExited) {
+                    Write-Warning "$($server.Name)/$name round $round discarded: the server exited but the port still answers"
+                    $tainted += [PSCustomObject]@{
+                        Server = $server.Name; Scenario = $name; Round = $round
+                        Errors = -1; Mismatches = -1; Reason = "stale port"
+                    }
                     continue
                 }
                 $hostCpu = [Math]::Round((((Get-Counter "\Processor(_Total)\% Processor Time" `
